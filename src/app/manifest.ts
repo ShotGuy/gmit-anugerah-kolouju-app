@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
     return {
-        name: "GMIT Bethesda Tarus Tengah",
-        short_name: "GMIT JBTT",
-        description: "Aplikasi Pendataan Jemaat GMIT Bethesda Tarus Tengah",
+        name: "GMIT Anugerah Koluju",
+        short_name: "GMIT JAK",
+        description: "Aplikasi Pendataan Jemaat GMIT Anugerah Koluju",
         start_url: "/dashboard",
         display: "standalone",
         background_color: "#ffffff",
