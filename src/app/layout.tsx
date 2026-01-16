@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GMIT Bethesda Tarus Tengah • Admin",
-  description: "Dashboard pendataan jemaat GMIT Bethesda Tarus Tengah",
+  title: "GMIT Anugerah Koluju • Admin",
+  description: "Dashboard pendataan jemaat GMIT Anugerah Koluju",
   icons: {
     icon: "/favicon-32x32.png",
     shortcut: "/favicon-32x32.png",

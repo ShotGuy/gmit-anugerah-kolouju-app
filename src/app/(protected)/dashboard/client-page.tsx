@@ -115,7 +115,7 @@ export default function DashboardClientPage({
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
                     <p className="text-muted-foreground">
-                        Ringkasan data dan statistik jemaat GMIT Bethesda Tarus Tengah.
+                        Ringkasan data dan statistik jemaat GMIT Anugerah Koluju.
                     </p>
                 </div>
                 <div className="flex gap-2">

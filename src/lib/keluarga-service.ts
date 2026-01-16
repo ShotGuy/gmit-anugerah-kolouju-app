@@ -17,7 +17,7 @@ export async function generateKeluargaId(
     // 2. Extract digits from Rayon name (e.g. "Rayon 5" -> "05")
     const rayonMatch = rayon.namaRayon.match(/\d+/);
     const rayonNum = rayonMatch ? rayonMatch[0].padStart(2, "0") : "00";
-    const prefix = `JBTT/${rayonNum}/`;
+    const prefix = `JAK/${rayonNum}/`;
 
     // 3. Find max sequence safely (in-memory sort to avoid string sort issues)
     const existingIds = await tx.keluarga.findMany({

@@ -108,7 +108,7 @@ export const SidebarContent = () => {
               priority
             />
           </div>
-          <span className="">GMIT Bethesda Tarus Tengah</span>
+          <span className="">GMIT Anugerah Koluju</span>
         </Link>
       </div>
       <div className="flex-1 overflow-auto py-2">
