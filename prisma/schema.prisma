@@ -1,0 +1,234 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Pendidikan {
+  idPendidikan String   @id @db.Char(10)
+  jenjang      String   @db.VarChar(50)
+  jemaat       Jemaat[]
+}
+
+model JaminanKes {
+  idJaminan    String  @id @db.Char(10)
+  jenisJaminan String  @db.VarChar(50)
+  jemaat       Jemaat[]
+}
+
+model Pekerjaan {
+  idPekerjaan String   @id @db.Char(10)
+  namaPekerjaan String @db.VarChar(50)
+  jemaat       Jemaat[]
+}
+
+model Pendapatan {
+  idPendapatan String   @id @db.Char(10)
+  rentang      String   @db.VarChar(50)
+  jemaat       Jemaat[]
+}
+
+model StatusDalamKeluarga {
+  idStatusDalamKel String   @id @db.Char(10)
+  status           String   @db.VarChar(50)
+  jemaat           Jemaat[]
+}
+
+model Baptis {
+  idBaptis String   @id @db.Char(10)
+  idJemaat String   @unique @db.Char(16)
+  idKlasis String   @db.Char(10)
+  tanggal  DateTime @db.Date
+
+  jemaat     Jemaat @relation("BaptisOwner", fields: [idJemaat], references: [idJemaat])
+  jemaatLink Jemaat? @relation("JemaatBaptisLink")
+  klasis     Klasis @relation(fields: [idKlasis], references: [idKlasis])
+
+  @@index([idKlasis])
+  @@index([tanggal])
+}
+
+model Sidi {
+  idSidi   String   @id @db.Char(10)
+  idJemaat String   @unique @db.Char(16)
+  idKlasis String   @db.Char(10)
+  tanggal DateTime  @db.Date
+
+  jemaat     Jemaat @relation("SidiOwner", fields: [idJemaat], references: [idJemaat])
+  jemaatLink Jemaat? @relation("JemaatSidiLink")
+  klasis     Klasis @relation(fields: [idKlasis], references: [idKlasis])
+
+  @@index([idKlasis])
+  @@index([tanggal])
+}
+
+model Pernikahan {
+  idPernikahan String   @id @db.Char(10)
+  klasis       String   @db.VarChar(50)
+  tanggal      DateTime @db.Date
+
+  jemaats Jemaat[]
+}
+
+model Jabatan {
+  idJabatan   String          @id @db.Char(10)
+  namaJabatan String          @db.VarChar(20)
+  jemaatRel   JemaatJabatan[]
+}
+
+model JemaatJabatan {
+  idJemaat        String   @db.Char(16)
+  idJabatan       String   @db.Char(10)
+  tanggalMulai    DateTime @db.Date
+  tanggalBerakhir DateTime? @db.Date
+  catatan         String?  @db.VarChar(255)
+  statusAktif     Boolean  @default(true)
+
+  jemaat  Jemaat  @relation(fields: [idJemaat], references: [idJemaat])
+  jabatan Jabatan @relation(fields: [idJabatan], references: [idJabatan])
+
+  @@id([idJemaat, idJabatan, tanggalMulai])
+}
+
+model StatusTanah {
+  idStatusTanah String    @id @db.Char(10)
+  status        String    @db.VarChar(20)
+  keluarga      Keluarga[]
+}
+
+model StatusKepemilikanRumah {
+  idStatusKepemilikan String    @id @db.Char(10)
+  status              String    @db.VarChar(50)
+  keluarga            Keluarga[]
+}
+
+model Rayon {
+  idRayon   String    @id @db.Char(10)
+  namaRayon String    @db.VarChar(20)
+  keluarga  Keluarga[]
+}
+
+model Provinsi {
+  idProv String    @id @db.Char(10)
+  nama   String    @db.VarChar(50)
+  kota   KotaKab[]
+}
+
+model KotaKab {
+  idKotaKab String  @id @db.Char(10)
+  idProv    String  @db.Char(10)
+  nama      String  @db.VarChar(50)
+
+  provinsi  Provinsi @relation(fields: [idProv], references: [idProv])
+  kecamatan Kecamatan[]
+}
+
+model Kecamatan {
+  idKec     String   @id @db.Char(10)
+  idKotaKab String   @db.Char(10)
+  nama      String   @db.VarChar(50)
+
+  kotaKab    KotaKab    @relation(fields: [idKotaKab], references: [idKotaKab])
+  kelurahan  Kelurahan[]
+}
+
+model Kelurahan {
+  idKelurahan String   @id @db.Char(10)
+  idKec       String   @db.Char(10)
+  nama        String   @db.VarChar(50)
+
+  kecamatan Kecamatan @relation(fields: [idKec], references: [idKec])
+  alamat    Alamat[]
+
+  @@index([nama])
+}
+
+model Alamat {
+  idAlamat    String   @id @db.Char(10)
+  idKelurahan String   @db.Char(10)
+  RT          Int
+  RW          Int
+  jalan       String   @db.VarChar(50)
+
+  kelurahan Kelurahan @relation(fields: [idKelurahan], references: [idKelurahan])
+  keluarga  Keluarga[]
+
+  @@index([idKelurahan])
+}
+
+model Keluarga {
+  idKeluarga          String   @id @db.Char(16)
+  noKK                String?  @unique @db.Char(16)
+  idAlamat            String   @db.Char(10)
+  idStatusKepemilikan String   @db.Char(10)
+  idRayon             String   @db.Char(10)
+  idStatusTanah       String   @db.Char(10)
+  fotoKartuKeluarga   String?  @db.VarChar(255)
+
+  alamat            Alamat                 @relation(fields: [idAlamat], references: [idAlamat])
+  statusKepemilikan StatusKepemilikanRumah @relation(fields: [idStatusKepemilikan], references: [idStatusKepemilikan])
+  rayon             Rayon                  @relation(fields: [idRayon], references: [idRayon])
+  statusTanah       StatusTanah            @relation(fields: [idStatusTanah], references: [idStatusTanah])
+  jemaat            Jemaat[]
+
+  @@index([idRayon])
+  @@index([idStatusKepemilikan])
+  @@index([idStatusTanah])
+}
+
+model Jemaat {
+  idJemaat       String   @id @db.Char(16)
+  idKeluarga     String   @db.Char(16)
+  statusDalamKel String   @db.Char(10)
+  idPendidikan   String?  @db.Char(10)
+  idPekerjaan    String?  @db.Char(10)
+  idPendapatan   String?  @db.Char(10)
+  idJaminan      String?  @db.Char(10)
+  idPernikahan   String?  @db.Char(10)
+  idBaptis       String?  @unique @db.Char(10)
+  idSidi         String?  @unique @db.Char(10)
+  nama           String   @db.VarChar(50)
+  jenisKelamin   Boolean
+  tanggalLahir   DateTime @db.Date
+  golDarah       String?  @db.Char(5)
+
+  keluarga         Keluarga            @relation(fields: [idKeluarga], references: [idKeluarga])
+  status           StatusDalamKeluarga @relation(fields: [statusDalamKel], references: [idStatusDalamKel])
+  pendidikan       Pendidikan?         @relation(fields: [idPendidikan], references: [idPendidikan])
+  pekerjaan        Pekerjaan?          @relation(fields: [idPekerjaan], references: [idPekerjaan])
+  pendapatan       Pendapatan?         @relation(fields: [idPendapatan], references: [idPendapatan])
+  jaminan          JaminanKes?         @relation(fields: [idJaminan], references: [idJaminan])
+  pernikahan       Pernikahan?         @relation(fields: [idPernikahan], references: [idPernikahan])
+  baptisOwned      Baptis?             @relation("BaptisOwner")
+  baptisRecord     Baptis?             @relation("JemaatBaptisLink", fields: [idBaptis], references: [idBaptis])
+  sidiOwned        Sidi?               @relation("SidiOwner")
+  sidiRecord       Sidi?               @relation("JemaatSidiLink", fields: [idSidi], references: [idSidi])
+  jabatanRel       JemaatJabatan[]
+
+  @@index([nama])
+  @@index([idKeluarga])
+  @@index([idPendidikan])
+  @@index([idPekerjaan])
+  @@index([idPendapatan])
+  @@index([idJaminan])
+  @@index([statusDalamKel])
+  @@index([golDarah])
+  @@index([tanggalLahir])
+}
+
+model Klasis {
+  idKlasis String   @id @db.Char(10)
+  nama     String   @db.VarChar(50)
+  baptis   Baptis[]
+  sidi     Sidi[]
+}
