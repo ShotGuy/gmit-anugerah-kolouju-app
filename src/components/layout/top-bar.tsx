@@ -27,7 +27,7 @@ export const TopBar = () => {
   };
 
   return (
-    <header className="flex items-center justify-between border-b bg-card px-4 py-3 lg:justify-end">
+    <header className="flex items-center justify-between px-4 py-3 lg:justify-end">
       <Sheet>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" className="lg:hidden">

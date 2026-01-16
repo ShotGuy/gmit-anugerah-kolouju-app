@@ -8,7 +8,7 @@ type Props = {
 };
 
 export const AppShell = ({ children }: Props) => (
-  <div className="flex min-h-screen bg-muted/20">
+  <div className="flex min-h-screen">
     <Sidebar />
     <div className="flex flex-1 flex-col">
       <TopBar />

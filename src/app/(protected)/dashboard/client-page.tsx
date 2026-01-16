@@ -139,16 +139,18 @@ export default function DashboardClientPage({
                 {statCards.map((card, i) => (
                     <div
                         key={i}
-                        className="flex items-center gap-4 rounded-xl border bg-card p-6 shadow-sm transition-all hover:shadow-md"
+                        className="relative overflow-hidden rounded-2xl border border-border/50 bg-card p-6 shadow-sm transition-all hover:shadow-md"
                     >
-                        <div className={`rounded-full p-3 ${card.bg}`}>
-                            <card.icon className={`h-6 w-6 ${card.color}`} />
+                        <div className="flex items-start justify-between">
+                            <div className={`rounded-xl p-3 ${card.bg}`}>
+                                <card.icon className={`h-6 w-6 ${card.color}`} />
+                            </div>
                         </div>
-                        <div>
+                        <div className="mt-4">
+                            <p className="text-3xl font-bold tracking-tight">{card.value}</p>
                             <p className="text-sm font-medium text-muted-foreground">
                                 {card.label}
                             </p>
-                            <p className="text-2xl font-bold">{card.value}</p>
                         </div>
                     </div>
                 ))}
@@ -157,7 +159,7 @@ export default function DashboardClientPage({
             {/* Charts Section */}
             <div className="grid gap-4 lg:grid-cols-7">
                 {/* Gender Chart (2 cols) */}
-                <div className="rounded-xl border bg-card p-6 shadow-sm lg:col-span-2">
+                <div className="rounded-2xl border border-border/50 bg-card p-6 shadow-sm lg:col-span-2">
                     <h3 className="mb-4 text-lg font-semibold">Komposisi Jemaat</h3>
                     <div className="h-[250px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -169,6 +171,7 @@ export default function DashboardClientPage({
                                     innerRadius={60}
                                     outerRadius={80}
                                     paddingAngle={5}
+                                    cornerRadius={10}
                                     dataKey="value"
                                 >
                                     {stats?.genderStats.map((entry, index) => (
@@ -195,7 +198,7 @@ export default function DashboardClientPage({
                 </div>
 
                 {/* Age Chart (3 cols) */}
-                <div className="rounded-xl border bg-card p-6 shadow-sm lg:col-span-3">
+                <div className="rounded-2xl border border-border/50 bg-card p-6 shadow-sm lg:col-span-3">
                     <h3 className="mb-4 text-lg font-semibold">Sebaran Usia</h3>
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -219,7 +222,7 @@ export default function DashboardClientPage({
                                 <Bar
                                     dataKey="value"
                                     fill="hsl(var(--primary))"
-                                    radius={[4, 4, 0, 0]}
+                                    radius={[10, 10, 0, 0]}
                                 />
                             </BarChart>
                         </ResponsiveContainer>
@@ -227,7 +230,7 @@ export default function DashboardClientPage({
                 </div>
 
                 {/* Birthdays (2 cols) */}
-                <div className="rounded-xl border bg-card p-6 shadow-sm lg:col-span-2">
+                <div className="rounded-2xl border border-border/50 bg-card p-6 shadow-sm lg:col-span-2">
                     <div className="mb-4 flex items-center gap-2">
                         <Cake className="h-5 w-5 text-pink-500" />
                         <h3 className="text-lg font-semibold">Ulang Tahun Minggu Ini</h3>
@@ -264,7 +267,7 @@ export default function DashboardClientPage({
             </div>
 
             {/* Rayon Stats */}
-            <div className="rounded-xl border bg-card p-6 shadow-sm">
+            <div className="rounded-2xl border border-border/50 bg-card p-6 shadow-sm">
                 <div className="mb-6 flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-green-600" />
                     <h3 className="text-lg font-semibold">Statistik Per Rayon (Top 10)</h3>
@@ -291,7 +294,7 @@ export default function DashboardClientPage({
                             <Bar
                                 dataKey="value"
                                 fill="#10b981" // Emerald 500
-                                radius={[4, 4, 0, 0]}
+                                radius={[10, 10, 0, 0]}
                             />
                         </BarChart>
                     </ResponsiveContainer>

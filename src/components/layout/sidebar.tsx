@@ -96,7 +96,7 @@ export const SidebarContent = () => {
 
   return (
     <div className="flex h-full flex-col gap-4">
-      <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+      <div className="flex h-16 items-center border-b border-border/40 px-6">
         <Link href="/" className="flex items-center gap-2 font-semibold">
           <div className="relative h-8 w-8">
             <Image
@@ -119,13 +119,13 @@ export const SidebarContent = () => {
               href={item.href}
               onMouseEnter={() => handlePrefetch(item.href)}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
+                "flex items-center gap-3 rounded-xl px-4 py-3 transition-all font-semibold",
                 pathname === item.href
-                  ? "bg-muted text-primary"
-                  : "text-muted-foreground"
+                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25 translate-x-1"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground hover:translate-x-1"
               )}
             >
-              <item.icon className="h-4 w-4" />
+              <item.icon className="h-5 w-5" />
               {item.label}
             </Link>
           ))}
@@ -231,8 +231,10 @@ export const SidebarContent = () => {
 
 export const Sidebar = () => {
   return (
-    <aside className="hidden w-64 border-r bg-card lg:block">
-      <SidebarContent />
+    <aside className="hidden w-64 bg-transparent lg:block p-4">
+      <div className="flex h-full flex-col rounded-2xl bg-card border border-border/50 shadow-sm overflow-hidden">
+        <SidebarContent />
+      </div>
     </aside>
   );
 };
