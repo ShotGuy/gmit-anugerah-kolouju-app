@@ -1,0 +1,24 @@
+User-agent: *
+Allow: /
+Allow: /api/auth/signin
+Allow: /api/auth/signup
+Allow: /gallery
+Allow: /about
+Allow: /sejarah
+
+# Block admin, employee, majelis, and jemaat dashboards from being indexed
+Disallow: /admin/
+Disallow: /employee/
+Disallow: /majelis/
+Disallow: /jemaat/
+Disallow: /onboarding
+Disallow: /api/admin/
+Disallow: /api/employee/
+Disallow: /api/majelis/
+Disallow: /api/jemaat/
+
+# Allow specific public API endpoints
+Allow: /api/pengumuman
+Allow: /api/kegiatan
+
+Sitemap: https://www.gmitjio-oepura.org/sitemap.xml

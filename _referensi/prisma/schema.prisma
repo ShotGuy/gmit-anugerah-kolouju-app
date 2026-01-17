@@ -1,0 +1,897 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  ADMIN
+  JEMAAT
+  MAJELIS
+  EMPLOYEE
+  PENDETA
+}
+
+// === DATA MASTER ==//
+
+model Provinsi {
+  id       String    @id @default(dbgenerated("concat('prov_', gen_random_uuid())")) @db.VarChar(80)
+  nama     String    @db.VarChar(50)
+  kotaKabs KotaKab[]
+
+  isActive Boolean @default(true)
+
+  @@map("provinsi")
+}
+
+model KotaKab {
+  id         String @id @default(dbgenerated("concat('kab_', gen_random_uuid())")) @db.VarChar(80)
+  idProvinsi String @db.VarChar(80)
+  nama       String @db.VarChar(50)
+
+  provinsi   Provinsi    @relation(fields: [idProvinsi], references: [id])
+  kecamatans Kecamatan[]
+
+  isActive Boolean @default(true)
+
+  @@map("kota_kab")
+}
+
+model Kecamatan {
+  id        String @id @default(dbgenerated("concat('kec_', gen_random_uuid())")) @db.VarChar(80)
+  idKotaKab String @db.VarChar(80)
+  nama      String @db.VarChar(50)
+
+  kotaKab    KotaKab     @relation(fields: [idKotaKab], references: [id])
+  kelurahans Kelurahan[]
+
+  isActive Boolean @default(true)
+
+  @@map("kecamatan")
+}
+
+model Kelurahan {
+  id          String @id @default(dbgenerated("concat('kel_', gen_random_uuid())")) @db.VarChar(80)
+  idKecamatan String @db.VarChar(80)
+  nama        String @db.VarChar(50)
+  kodePos     String @db.VarChar(10) // Tambahan kodepos
+
+  isActive Boolean @default(true)
+
+  kecamatan Kecamatan @relation(fields: [idKecamatan], references: [id])
+  alamats   Alamat[]
+
+  @@map("kelurahan")
+}
+
+model Alamat {
+  id          String @id @default(dbgenerated("concat('almt_', gen_random_uuid())")) @db.VarChar(80)
+  idKelurahan String @db.VarChar(80)
+  rt          Int
+  rw          Int
+  jalan       String @db.VarChar(50)
+
+  kelurahan Kelurahan  @relation(fields: [idKelurahan], references: [id])
+  keluargas Keluarga[]
+
+  @@map("alamat")
+}
+
+model StatusKeluarga {
+  id        String     @id @default(dbgenerated("concat('skel_', gen_random_uuid())")) @db.VarChar(80)
+  status    String     @db.VarChar(50)
+  isActive  Boolean    @default(true)
+  keluargas Keluarga[]
+
+  @@map("status_keluarga")
+}
+
+model KeadaanRumah {
+  id        String     @id @default(dbgenerated("concat('krum_', gen_random_uuid())")) @db.VarChar(80)
+  keadaan   String     @db.VarChar(50)
+  isActive  Boolean    @default(true)
+  keluargas Keluarga[]
+
+  @@map("keadaan_rumah")
+}
+
+model StatusKepemilikanRumah {
+  id        String     @id @default(dbgenerated("concat('srum_', gen_random_uuid())")) @db.VarChar(80)
+  status    String     @db.VarChar(50)
+  isActive  Boolean    @default(true)
+  keluargas Keluarga[]
+
+  @@map("status_kepemilikan_rumah")
+}
+
+model StatusDalamKeluarga {
+  id       String   @id @default(dbgenerated("concat('sdkel_', gen_random_uuid())")) @db.VarChar(80)
+  status   String   @db.VarChar(50)
+  isActive Boolean  @default(true)
+  jemaats  Jemaat[]
+
+  @@map("status_dalam_keluarga")
+}
+
+model Suku {
+  id       String   @id @default(dbgenerated("concat('suku_', gen_random_uuid())")) @db.VarChar(80)
+  namaSuku String   @db.VarChar(50)
+  isActive Boolean  @default(true)
+  jemaats  Jemaat[]
+
+  @@map("suku")
+}
+
+model Pekerjaan {
+  id            String   @id @default(dbgenerated("concat('pkj_', gen_random_uuid())")) @db.VarChar(80)
+  namaPekerjaan String   @db.VarChar(50)
+  isActive      Boolean  @default(true)
+  jemaats       Jemaat[]
+
+  @@map("pekerjaan")
+}
+
+model Pendidikan {
+  id       String   @id @default(dbgenerated("concat('pend_', gen_random_uuid())")) @db.VarChar(80)
+  jenjang  String   @db.VarChar(50)
+  isActive Boolean  @default(true)
+  jemaats  Jemaat[]
+
+  @@map("pendidikan")
+}
+
+model Pendapatan {
+  id       String   @id @default(dbgenerated("concat('pdpt_', gen_random_uuid())")) @db.VarChar(80)
+  label    String   @db.VarChar(50) // contoh: "1 - 3 juta"
+  min      Int
+  max      Int
+  isActive Boolean  @default(true)
+  jemaats  Jemaat[]
+
+  @@map("pendapatan")
+}
+
+model JaminanKesehatan {
+  id           String   @id @default(dbgenerated("concat('jkes_', gen_random_uuid())")) @db.VarChar(80)
+  jenisJaminan String   @db.VarChar(50)
+  isActive     Boolean  @default(true)
+  jemaats      Jemaat[]
+
+  @@map("jaminan_kesehatan")
+}
+
+//JABATAN. Contoh: Pendeta, Majelis, Karyawan, dll.
+
+// === DATA MASTER ==//
+
+model Rayon {
+  id        String @id @default(dbgenerated("concat('ray_', gen_random_uuid())")) @db.VarChar(80)
+  namaRayon String @db.VarChar(50)
+
+  keluargas     Keluarga[]
+  jadwalIbadahs JadwalIbadah[]
+  Majelis       Majelis[]
+  User          User[]
+
+  @@map("rayon")
+}
+
+model Keluarga {
+  id                       String  @id @default(dbgenerated("concat('kel_', gen_random_uuid())")) @db.VarChar(80)
+  idAlamat                 String  @db.VarChar(80)
+  idStatusKeluarga         String  @db.VarChar(80)
+  idStatusKepemilikanRumah String  @db.VarChar(80)
+  idKeadaanRumah           String  @db.VarChar(80)
+  idRayon                  String  @db.VarChar(80)
+  noBagungan               Int
+  noKK                     String? @unique @db.VarChar(20)
+
+  alamat                 Alamat                 @relation(fields: [idAlamat], references: [id])
+  statusKeluarga         StatusKeluarga         @relation(fields: [idStatusKeluarga], references: [id])
+  statusKepemilikanRumah StatusKepemilikanRumah @relation(fields: [idStatusKepemilikanRumah], references: [id])
+  keadaanRumah           KeadaanRumah           @relation(fields: [idKeadaanRumah], references: [id])
+  rayon                  Rayon                  @relation(fields: [idRayon], references: [id])
+  jemaats                Jemaat[]
+  JadwalIbadahKeluarga   JadwalIbadah[]
+  // ibadahPenerimaans         IbadahPenerimaan[]
+  // ibadahPengeluarans        IbadahPengeluaran[]
+
+  // Keuangan relations
+  // transaksiPenerimaan TransaksiPenerimaan[]
+
+  @@map("keluarga")
+}
+
+model User {
+  id         String  @id @default(dbgenerated("concat('usr_', gen_random_uuid())")) @db.VarChar(80)
+  username   String? @unique @db.VarChar(50)
+  email      String  @unique @db.VarChar(100)
+  password   String  @db.VarChar(255)
+  noWhatsapp String? @db.VarChar(20)
+  role       Role
+  idJemaat   String? @unique @db.VarChar(80) // Untuk role: JEMAAT
+  idMajelis  String? @unique @db.VarChar(80) // TAMBAH INI - Untuk role: MAJELIS
+  idPegawai  String? @unique @db.VarChar(80) // TAMBAH INI - Untuk role: EMPLOYEE
+  idRayon    String? @db.VarChar(80) // TAMBAH INI - Untuk memudahkan akses data berdasarkan rayon
+
+  jemaat   Jemaat?  @relation(fields: [idJemaat], references: [id])
+  majelis  Majelis? @relation(fields: [idMajelis], references: [id]) // TAMBAH INI
+  pegawai  Pegawai? @relation(fields: [idPegawai], references: [id]) // TAMBAH INI
+  rayon    Rayon?   @relation(fields: [idRayon], references: [id]) // TAMBAH INI
+  isActive Boolean  @default(true)
+
+  // Document relations
+  dokumenUploaded DokumenJemaat[] @relation("DokumenUploader")
+  dokumenVerified DokumenJemaat[] @relation("DokumenVerifier")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user")
+}
+
+model Jemaat {
+  id                    String       @id @default(dbgenerated("concat('jmt_', gen_random_uuid())")) @db.VarChar(80)
+  idKeluarga            String       @db.VarChar(80)
+  idStatusDalamKeluarga String       @db.VarChar(80)
+  idSuku                String       @db.VarChar(80)
+  idPendidikan          String       @db.VarChar(80)
+  idPekerjaan           String       @db.VarChar(80)
+  idPendapatan          String       @db.VarChar(80)
+  idJaminanKesehatan    String       @db.VarChar(80)
+  idPernikahan          String?      @db.VarChar(80)
+  nama                  String       @db.VarChar(50)
+  jenisKelamin          Boolean
+  tanggalLahir          DateTime     @db.Date
+  golonganDarah         String?      @db.VarChar(5)
+  status                StatusJemaat @default(AKTIF) // Status jemaat
+
+  keluarga            Keluarga            @relation(fields: [idKeluarga], references: [id])
+  statusDalamKeluarga StatusDalamKeluarga @relation(fields: [idStatusDalamKeluarga], references: [id])
+  suku                Suku                @relation(fields: [idSuku], references: [id])
+  pendidikan          Pendidikan          @relation(fields: [idPendidikan], references: [id])
+  pekerjaan           Pekerjaan           @relation(fields: [idPekerjaan], references: [id])
+  pendapatan          Pendapatan          @relation(fields: [idPendapatan], references: [id])
+  jaminanKesehatan    JaminanKesehatan    @relation(fields: [idJaminanKesehatan], references: [id])
+  // atestasi              Atestasi?             @relation(fields: [idAtestasi], references: [id])
+  pernikahan          Pernikahan?         @relation(fields: [idPernikahan], references: [id])
+
+  baptiss                       Baptis[]
+  sidis                         Sidi[]
+  // ibadahPenerimaans     IbadahPenerimaan[]
+  // ibadahPengeluarans    IbadahPengeluaran[]
+  ibadahKeluargaJemaatsPemimpin JadwalIbadah[]  @relation("PemimpinIbadah")
+  atestasis                     Atestasi[]
+  User                          User?
+  Majelis                       Majelis[]
+  pegawais                      Pegawai[] // TAMBAH INI
+  dokumenJemaat                 DokumenJemaat[] // Documents uploaded by jemaat
+
+  // Keuangan relations
+  // transaksiPenerimaan TransaksiPenerimaan[]
+
+  @@map("jemaat")
+}
+
+enum TipeAtestasi {
+  MASUK
+  KELUAR
+}
+
+enum StatusJemaat {
+  AKTIF
+  TIDAK_AKTIF
+  KELUAR
+}
+
+model Atestasi {
+  id              String       @id @default(dbgenerated("concat('att_', gen_random_uuid())")) @db.VarChar(80)
+  idJemaat        String?      @db.VarChar(80) // Untuk jemaat keluar, untuk masuk null dulu
+  idKlasis        String?      @db.VarChar(80) // Klasis asal/tujuan
+  tipe            TipeAtestasi
+  tanggal         DateTime     @db.Date
+  gerejaAsal      String?      @db.VarChar(100) // Untuk jemaat masuk
+  gerejaTujuan    String?      @db.VarChar(100) // Untuk jemaat keluar
+  alasan          String?      @db.Text
+  keterangan      String?      @db.Text
+  namaCalonJemaat String?      @db.VarChar(100) // Nama calon jemaat untuk tipe MASUK
+
+  // Relasi ke jemaat (bisa null untuk jemaat baru yang masuk)
+  jemaat Jemaat? @relation(fields: [idJemaat], references: [id])
+  klasis Klasis? @relation(fields: [idKlasis], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("atestasi")
+}
+
+model Klasis {
+  id       String  @id @default(dbgenerated("concat('kls_', gen_random_uuid())")) @db.VarChar(80)
+  nama     String  @db.VarChar(50)
+  isActive Boolean @default(true)
+
+  pernikahans Pernikahan[]
+  baptiss     Baptis[]
+  sidis       Sidi[]
+  atestasis   Atestasi[]
+
+  @@map("klasis")
+}
+
+model JenisJabatan {
+  id          String    @id @default(dbgenerated("concat('jb_', gen_random_uuid())")) @db.VarChar(80)
+  namaJabatan String    @db.VarChar(50) // Contoh: Pendeta, Majelis, Karyawan, dll.
+  isActive    Boolean   @default(true)
+  majelises   Majelis[]
+  pegawais    Pegawai[] // TAMBAH INI
+
+  @@map("jenis_jabatan")
+}
+
+model Majelis {
+  id          String    @id @default(dbgenerated("concat('mjl_', gen_random_uuid())")) @db.VarChar(80)
+  // namaLengkap removed
+  mulai       DateTime  @db.Date
+  selesai     DateTime? @db.Date
+  idRayon     String?   @db.VarChar(80) // TAMBAH INI
+
+  jenisJabatan   JenisJabatan? @relation(fields: [jenisJabatanId], references: [id])
+  jenisJabatanId String?       @db.VarChar(80)
+  jemaat         Jemaat?       @relation(fields: [idJemaat], references: [id])
+  idJemaat       String?       @db.VarChar(80)
+  rayon          Rayon?        @relation(fields: [idRayon], references: [id]) // TAMBAH INI
+
+  // --- permission logic
+  isUtama        Boolean @default(false) // kalau true = Majelis Utama
+  canView        Boolean @default(true)
+  canEdit        Boolean @default(false)
+  canCreate      Boolean @default(false)
+  canDelete      Boolean @default(false)
+  canManageRayon Boolean @default(false)
+
+  jadwalIbadahs JadwalIbadah[] @relation("MajelisPembuat") // TAMBAH INI
+  User          User?
+
+  @@map("majelis")
+}
+
+model Pegawai {
+  id             String    @id @default(dbgenerated("concat('pgw_', gen_random_uuid())")) @db.VarChar(80)
+  // namaLengkap removed
+  
+  mulai          DateTime  @db.Date
+  selesai        DateTime? @db.Date
+
+  // Relasi Jabatan (via JenisJabatan generic)
+  idJenisJabatan String    @db.VarChar(80)
+  jenisJabatan   JenisJabatan @relation(fields: [idJenisJabatan], references: [id])
+
+  // Relasi Jemaat (Opsional, jika pegawai adalah jemaat)
+  idJemaat       String?   @db.VarChar(80)
+  jemaat         Jemaat?   @relation(fields: [idJemaat], references: [id])
+
+  // Relasi User (Untuk login)
+  User           User?
+
+  // Permissions (Hak Akses)
+  // 1. Administrasi Jemaat
+  canViewJemaat      Boolean @default(false)
+  canManageJemaat    Boolean @default(false)
+
+  // 2. Operasional & Ibadah
+  canManageJadwal    Boolean @default(false)
+  canManagePengumuman Boolean @default(false)
+  canManageGaleri    Boolean @default(false)
+
+  // 3. Keuangan
+  canViewKeuangan    Boolean @default(false)
+  canManageKeuangan  Boolean @default(false)
+  
+  isActive       Boolean @default(true)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("pegawai")
+}
+
+model Pernikahan {
+  id       String   @id @default(dbgenerated("concat('nikah_', gen_random_uuid())")) @db.VarChar(80)
+  idKlasis String   @db.VarChar(80)
+  tanggal  DateTime @db.Date
+
+  klasis  Klasis   @relation(fields: [idKlasis], references: [id])
+  jemaats Jemaat[]
+
+  @@map("pernikahan")
+}
+
+model Baptis {
+  id       String   @id @default(dbgenerated("concat('bpt_', gen_random_uuid())")) @db.VarChar(80)
+  idJemaat String   @db.VarChar(80)
+  idKlasis String   @db.VarChar(80)
+  tanggal  DateTime @db.Date
+
+  jemaat Jemaat @relation(fields: [idJemaat], references: [id])
+  klasis Klasis @relation(fields: [idKlasis], references: [id])
+
+  @@map("baptis")
+}
+
+model Sidi {
+  id       String   @id @default(dbgenerated("concat('sidi_', gen_random_uuid())")) @db.VarChar(80)
+  idJemaat String   @db.VarChar(80)
+  idKlasis String   @db.VarChar(80)
+  tanggal  DateTime @db.Date
+
+  jemaat Jemaat @relation(fields: [idJemaat], references: [id])
+  klasis Klasis @relation(fields: [idKlasis], references: [id])
+
+  @@map("sidi")
+}
+
+//"Ibadah Minggu", "Ibadah Pemuda", "Doa Pagi", dll.
+model JenisIbadah {
+  id         String  @id @default(dbgenerated("concat('ibd_', gen_random_uuid())")) @db.VarChar(80)
+  namaIbadah String  @db.VarChar(50)
+  isActive   Boolean @default(true)
+
+  jadwalIbadahs JadwalIbadah[]
+
+  @@map("jenis_ibadah")
+}
+
+model KategoriJadwal {
+  id           String  @id @default(dbgenerated("concat('ktg_', gen_random_uuid())")) @db.VarChar(80)
+  namaKategori String  @db.VarChar(50) // "Keluarga", "Mingguan", "Bulanan", "Khusus", dll
+  deskripsi    String? @db.Text
+  isActive     Boolean @default(true)
+
+  jadwalIbadahs JadwalIbadah[]
+
+  @@map("kategori_jadwal")
+}
+
+model JadwalIbadah {
+  id            String @id @default(dbgenerated("concat('jdw_', gen_random_uuid())")) @db.VarChar(80)
+  idJenisIbadah String @db.VarChar(80)
+  idKategori    String @db.VarChar(80)
+  idPemimpin    String @db.VarChar(80)
+
+  // Fields yang bersifat opsional tergantung kategori
+  idKeluarga String? @db.VarChar(80) // Untuk ibadah keluarga
+  idRayon    String? @db.VarChar(80) // Untuk ibadah rayon
+
+  judul        String    @db.VarChar(100)
+  tanggal      DateTime  @db.Date
+  waktuMulai   DateTime? @db.Time
+  waktuSelesai DateTime? @db.Time
+
+  // Lokasi fields - diperluas untuk detail lokasi
+  alamat         String? @db.VarChar(200) // Alamat lengkap
+  lokasi         String? @db.VarChar(100) // Nama lokasi/gedung
+  latitude       Float? // Koordinat latitude
+  longitude      Float? // Koordinat longitude
+  googleMapsLink String? @db.Text // Link Google Maps
+
+  firman     String? @db.VarChar(100) // Ayat
+  tema       String? @db.VarChar(100)
+  keterangan String? @db.Text
+
+  idPembuat String? @db.VarChar(80) // ID Majelis yang membuat jadwal
+
+  // Statistik peserta (opsional)
+  jumlahLaki      Int?
+  jumlahPerempuan Int?
+  targetPeserta   Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  jenisIbadah JenisIbadah    @relation(fields: [idJenisIbadah], references: [id])
+  kategori    KategoriJadwal @relation(fields: [idKategori], references: [id])
+  pemimpin    Jemaat         @relation("PemimpinIbadah", fields: [idPemimpin], references: [id])
+  keluarga    Keluarga?      @relation(fields: [idKeluarga], references: [id])
+  rayon       Rayon?         @relation(fields: [idRayon], references: [id])
+
+  // Untuk peserta yang hadir
+  pembuat   Majelis? @relation("MajelisPembuat", fields: [idPembuat], references: [id])
+  majelisId String?  @db.VarChar(80)
+
+  // Keuangan relations
+  // transaksiPenerimaan TransaksiPenerimaan[]
+
+  @@map("jadwal_ibadah")
+}
+
+// Model untuk kategori utama pengumuman (1-9)
+model KategoriPengumuman {
+  id        String   @id @default(dbgenerated("concat('kat_', gen_random_uuid())")) @db.VarChar(80)
+  nama      String   @db.VarChar(100)
+  deskripsi String?  @db.Text
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  pasalDeskripsi String? @db.Text
+  
+
+  // Relations
+  jenisPengumuman JenisPengumuman[]
+  pengumuman      Pengumuman[]
+
+  @@map("kategori_pengumuman")
+}
+
+// Model untuk jenis pengumuman (sub kategori)
+model JenisPengumuman {
+  id         String   @id @default(dbgenerated("concat('jns_', gen_random_uuid())")) @db.VarChar(80)
+  kategoriId String   @map("kategori_id") @db.VarChar(80)
+  nama       String   @db.VarChar(150)
+  deskripsi  String?  @db.Text
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  kategori   KategoriPengumuman @relation(fields: [kategoriId], references: [id], onDelete: Cascade)
+  pengumuman Pengumuman[]
+
+  @@unique([kategoriId, nama], name: "unique_nama_per_kategori")
+  @@map("jenis_pengumuman")
+}
+
+// Enum untuk status pengumuman
+enum StatusPengumuman {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@map("status_pengumuman")
+}
+
+// Enum untuk prioritas pengumuman
+enum PrioritasPengumuman {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+
+  @@map("prioritas_pengumuman")
+}
+
+// Model utama untuk pengumuman
+model Pengumuman {
+  id         String  @id @default(dbgenerated("concat('png_', gen_random_uuid())")) @db.VarChar(80)
+  judul      String  @db.VarChar(255)
+  kategoriId String  @map("kategori_id") @db.VarChar(80)
+  jenisId    String? @map("jenis_id") @db.VarChar(80)
+
+  // Konten dinamis dalam JSON
+  konten Json
+
+  // Metadata
+  tanggalPengumuman DateTime @map("tanggal_pengumuman") @db.Date
+
+  // Status dan prioritas
+  status    StatusPengumuman    @default(DRAFT)
+  prioritas PrioritasPengumuman @default(MEDIUM)
+  isPinned  Boolean             @default(false) @map("is_pinned")
+
+  // File attachments (JSON array)
+  attachments Json?
+
+  // Audit trail
+  createdBy   String?   @map("created_by") @db.VarChar(80)
+  updatedBy   String?   @map("updated_by") @db.VarChar(80)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  publishedAt DateTime? @map("published_at")
+
+  // Relations
+  kategori KategoriPengumuman @relation(fields: [kategoriId], references: [id])
+  jenis    JenisPengumuman?   @relation(fields: [jenisId], references: [id], onDelete: SetNull)
+
+  // Indexes
+  @@index([kategoriId], name: "idx_pengumuman_kategori")
+  @@index([jenisId], name: "idx_pengumuman_jenis")
+  @@index([tanggalPengumuman], name: "idx_pengumuman_tanggal")
+  @@index([status], name: "idx_pengumuman_status")
+  @@index([status, publishedAt], name: "idx_pengumuman_published")
+  @@map("pengumuman")
+}
+
+model Kegiatan {
+  id        String @id @default(dbgenerated("concat('kgt_', gen_random_uuid())")) @db.VarChar(80)
+  nama      String @db.VarChar(50)
+  deskripsi String @db.Text
+
+  @@map("kegiatan")
+}
+
+// Model untuk galeri kegiatan (foto dalam JSON array)
+model Galeri {
+  id              String   @id @default(dbgenerated("concat('gal_', gen_random_uuid())")) @db.VarChar(80)
+  namaKegiatan    String   @map("nama_kegiatan") @db.VarChar(255)
+  deskripsi       String?  @db.Text
+  tempat          String   @db.VarChar(255)
+  tanggalKegiatan DateTime @map("tanggal_kegiatan") @db.Date
+
+  // Foto-foto dalam JSON array
+  fotos String? @db.Text
+
+  // Status dan visibility
+  isActive    Boolean @default(true) @map("is_active")
+  isPublished Boolean @default(false) @map("is_published")
+
+  // Audit trail
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  publishedAt DateTime? @map("published_at")
+
+  // Indexes
+  @@index([tanggalKegiatan], name: "idx_tanggal_kegiatan")
+  @@map("galeri")
+}
+
+// ===== SCHEMA KEUANGAN DINAMIS =====
+
+// Model untuk kategori utama (PENERIMAAN/PENGELUARAN)
+model KategoriKeuangan {
+  id       String  @id @default(dbgenerated("concat('kkat_', gen_random_uuid())")) @db.VarChar(80)
+  nama     String  @db.VarChar(100) // "PENERIMAAN" atau "PENGELUARAN"
+  kode     String  @unique @db.VarChar(10) // "A" untuk Penerimaan, "B" untuk Pengeluaran
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  itemKeuangan ItemKeuangan[]
+
+  @@map("kategori_keuangan")
+}
+
+// Model untuk item keuangan (struktur hierarkis dinamis)
+//Model ini utk Perancangan KEUANGAN (anggaran target) bukan actual transaksi
+model ItemKeuangan {
+  id         String  @id @default(dbgenerated("concat('item_', gen_random_uuid())")) @db.VarChar(80)
+  kategoriId String  @map("kategori_id") @db.VarChar(80)
+  periodeId  String  @map("periode_id") @db.VarChar(80) // TAMBAH: Relasi ke periode
+  parentId   String? @map("parent_id") @db.VarChar(80) // Untuk hierarki
+
+  kode      String  @db.VarChar(20) // "A", "A.1", "A.1.1", "A.1.1.1"
+  nama      String  @db.VarChar(255) // Nama item
+  deskripsi String? @db.Text
+
+  level  Int @default(1) // Level hierarki (1, 2, 3, 4, dst)
+  urutan Int @default(0) // Urutan dalam level yang sama
+
+  // Target/anggaran fields (tambahan untuk perencanaan anggaran)
+  targetFrekuensi Int?     @map("target_frekuensi") // Target frekuensi (misal: 12 kali)
+  satuanFrekuensi String?  @map("satuan_frekuensi") @db.VarChar(20) // Satuan (Per Bulan, Per Tahun, dll)
+  nominalSatuan   Decimal? @map("nominal_satuan") @db.Decimal(15, 2) // Nominal per satuan
+  totalTarget     Decimal? @map("total_target") @db.Decimal(15, 2) // Total target anggaran (auto calculated)
+
+  // Data actual transaksi (bukan target/anggaran)
+  nominalActual   Decimal @default(0) @map("nominal_actual") @db.Decimal(15, 2) // Total actual penerimaan/pengeluaran
+  jumlahTransaksi Int     @default(0) @map("jumlah_transaksi") // Jumlah transaksi yang terjadi
+
+  keterangan String? @db.Text
+
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  kategori KategoriKeuangan @relation(fields: [kategoriId], references: [id])
+  periode  PeriodeAnggaran  @relation(fields: [periodeId], references: [id])
+  parent   ItemKeuangan?    @relation("HierarkiItem", fields: [parentId], references: [id])
+  children ItemKeuangan[]   @relation("HierarkiItem")
+
+  realisasiItemKeuangan RealisasiItemKeuangan[]
+
+  @@unique([kategoriId, periodeId, kode], name: "unique_kode_per_kategori_periode")
+  @@index([kategoriId], name: "idx_item_kategori")
+  @@index([periodeId], name: "idx_item_periode")
+  @@index([parentId], name: "idx_item_parent")
+  @@index([level], name: "idx_item_level")
+  @@map("item_keuangan")
+}
+
+// Model untuk realisasi item keuangan (catatan transaksi aktual per item)
+// Model ini untuk mencatat realisasi - setiap record adalah 1 entry realisasi
+// Frekuensi dihitung dari jumlah records per item
+model RealisasiItemKeuangan {
+  id             String @id @default(dbgenerated("concat('rik_', gen_random_uuid())")) @db.VarChar(80)
+  itemKeuanganId String @map("item_keuangan_id") @db.VarChar(80)
+  periodeId      String @map("periode_id") @db.VarChar(80) // Same periode as ItemKeuangan
+
+  // Data realisasi - simple!
+  tanggalRealisasi DateTime @map("tanggal_realisasi") @db.Date // Tanggal realisasi
+  totalRealisasi   Decimal  @map("total_realisasi") @db.Decimal(15, 2) // Total amount untuk entry ini
+
+  keterangan String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  itemKeuangan ItemKeuangan    @relation(fields: [itemKeuanganId], references: [id], onDelete: Cascade)
+  periode      PeriodeAnggaran @relation(fields: [periodeId], references: [id])
+
+  @@index([itemKeuanganId], name: "idx_realisasi_item")
+  @@index([periodeId], name: "idx_realisasi_periode")
+  @@index([tanggalRealisasi], name: "idx_realisasi_tanggal")
+  @@map("realisasi_item_keuangan")
+}
+
+// Model untuk periode anggaran
+model PeriodeAnggaran {
+  id           String   @id @default(dbgenerated("concat('per_', gen_random_uuid())")) @db.VarChar(80)
+  nama         String   @db.VarChar(100) // "Anggaran 2025", "Q1 2025"
+  tahun        Int
+  tanggalMulai DateTime @map("tanggal_mulai") @db.Date
+  tanggalAkhir DateTime @map("tanggal_akhir") @db.Date
+
+  status     StatusPeriode @default(DRAFT)
+  keterangan String?       @db.Text
+
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  itemKeuangan          ItemKeuangan[]
+  realisasiItemKeuangan RealisasiItemKeuangan[]
+
+  @@map("periode_anggaran")
+}
+
+enum StatusPeriode {
+  DRAFT
+  ACTIVE
+  CLOSED
+}
+
+enum StatusTransaksi {
+  DRAFT
+  APPROVED
+  REJECTED
+  PAID
+}
+
+// === DOKUMEN JEMAAT ===
+
+enum TipeDokumen {
+  BAPTIS
+  SIDI
+  NIKAH
+  LAINNYA
+}
+
+enum StatusDokumen {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Model untuk menyimpan dokumen-dokumen jemaat (surat baptis, sidi, nikah)
+model DokumenJemaat {
+  id            String        @id @default(dbgenerated("concat('dok_', gen_random_uuid())")) @db.VarChar(80)
+  jemaatId      String        @db.VarChar(80)
+  tipeDokumen   TipeDokumen
+  judulDokumen  String?       @db.VarChar(255) // Custom title when tipeDokumen is LAINNYA
+  namaFile      String        @db.VarChar(255) // Nama file asli
+  urlFile       String        @db.Text // URL file di AWS S3
+  s3Key         String        @db.Text // S3 key untuk delete file
+  statusDokumen StatusDokumen @default(PENDING)
+  catatan       String?       @db.Text // Keterangan dari admin jika ditolak
+
+  // Metadata
+  uploadedBy String    @db.VarChar(80) // ID user yang upload
+  verifiedAt DateTime? @map("verified_at")
+  verifiedBy String?   @map("verified_by") @db.VarChar(80) // ID admin yang verifikasi
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  jemaat   Jemaat @relation(fields: [jemaatId], references: [id], onDelete: Cascade)
+  uploader User   @relation("DokumenUploader", fields: [uploadedBy], references: [id])
+  verifier User?  @relation("DokumenVerifier", fields: [verifiedBy], references: [id])
+
+  @@unique([jemaatId, tipeDokumen], name: "unique_jemaat_dokumen") // Satu jemaat hanya boleh upload satu dokumen per tipe
+  @@index([jemaatId], name: "idx_dokumen_jemaat")
+  @@index([tipeDokumen], name: "idx_dokumen_tipe")
+  @@index([statusDokumen], name: "idx_dokumen_status")
+  @@map("dokumen_jemaat")
+}
+
+// === PROFIL PENDETA ===
+
+// Model untuk profil pendeta (nama dan gambar)
+model ProfilPendeta {
+  id      String  @id @default(dbgenerated("concat('ppd_', gen_random_uuid())")) @db.VarChar(80)
+  nama    String  @db.VarChar(100) // Nama lengkap pendeta
+  urlFoto String? @db.Text // URL foto di AWS S3
+  s3Key   String? @db.Text // S3 key untuk delete file
+  
+  // New Fields requested by user
+  status  String? @db.VarChar(100) // e.g. "Ketua Majelis", "Pendeta Jemaat"
+  periode String? @db.VarChar(50)  // e.g. "2020 - Sekarang"
+  quote   String? @db.Text         // Kutipan inspiratif
+
+  // Status dan visibility
+  isActive Boolean @default(true) @map("is_active")
+
+  // Metadata
+  createdBy String? @map("created_by") @db.VarChar(80) // ID user yang membuat
+  updatedBy String? @map("updated_by") @db.VarChar(80) // ID user yang update
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive], name: "idx_profil_pendeta_active")
+  @@map("profil_pendeta")
+}
+
+// === KONTEN LANDING PAGE ===
+
+// Enum untuk tipe section konten
+enum TipeSection {
+  VISI
+  MISI
+  SEJARAH
+  HERO
+  TENTANG
+  TEMAGMIT
+}
+
+// Model untuk konten landing page (visi, misi, sejarah, dll)
+model KontenLandingPage {
+  id      String      @id @default(dbgenerated("concat('klp_', gen_random_uuid())")) @db.VarChar(80)
+  section TipeSection // VISI, MISI, SEJARAH, HERO, TENTANG
+
+  // Konten fields
+  judul     String  @db.VarChar(255)
+  konten    String  @db.Text // Bisa berisi teks panjang atau HTML
+  deskripsi String? @db.Text // Deskripsi tambahan
+
+  // Untuk konten yang berurutan (misal: timeline sejarah)
+  urutan Int @default(0)
+
+  // Metadata tambahan dalam JSON (fleksibel untuk kebutuhan custom)
+  metadata Json? // Bisa berisi data tambahan seperti list misi, timeline, dll
+
+  // Status dan visibility
+  isActive    Boolean @default(true) @map("is_active")
+  isPublished Boolean @default(false) @map("is_published")
+
+  // Audit trail
+  createdBy String? @map("created_by") @db.VarChar(80) // ID user yang membuat
+  updatedBy String? @map("updated_by") @db.VarChar(80) // ID user yang update
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  publishedAt DateTime? @map("published_at")
+
+  @@unique([section, urutan], name: "unique_section_urutan")
+  @@index([section], name: "idx_konten_section")
+  @@index([isActive], name: "idx_konten_active")
+  @@index([isPublished], name: "idx_konten_published")
+  @@map("konten_landing_page")
+}

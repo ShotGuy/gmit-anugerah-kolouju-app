@@ -14,6 +14,7 @@ import {
   Tag,
   Home,
   Users,
+  Calendar,
   BookOpen,
   Briefcase,
   CreditCard,
@@ -22,7 +23,9 @@ import {
   Award,
   Droplet,
   Star,
+  Wallet,
   PieChart,
+  List,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -33,6 +36,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/jemaat", label: "Jemaat", icon: Users },
   { href: "/keluarga", label: "Keluarga", icon: Home },
+  { href: "/keuangan", label: "Keuangan", icon: Wallet },
   { href: "/laporan", label: "Laporan", icon: PieChart },
   { href: "/jabatan", label: "Jabatan", icon: Briefcase },
 ];
@@ -61,9 +65,20 @@ const WILAYAH_ITEM = {
 
 export const SidebarContent = () => {
   const pathname = usePathname();
-  const [sakramenOpen, setSakramenOpen] = useState(true);
-  const [masterOpen, setMasterOpen] = useState(true);
+  const [sakramenOpen, setSakramenOpen] = useState(false);
+  const [masterOpen, setMasterOpen] = useState(false);
+  const [keuanganMasterOpen, setKeuanganMasterOpen] = useState(false);
   const queryClient = useQueryClient();
+
+  // Filter out the old single "Keuangan" item if it exists in navItems, 
+  // and add the new feature menus: Statistik & Realisasi
+  const mainNavItems = [
+    { href: "/dashboard", label: "Dashboard", icon: Home },
+    { href: "/jemaat", label: "Jemaat", icon: Users },
+    { href: "/keluarga", label: "Keluarga", icon: Home },
+    { href: "/laporan", label: "Laporan", icon: BookOpen }, // Changed icon to distinguish
+    { href: "/jabatan", label: "Jabatan", icon: Briefcase },
+  ];
 
   const handlePrefetch = (href: string) => {
     if (href === "/jemaat") {
@@ -113,7 +128,7 @@ export const SidebarContent = () => {
       </div>
       <div className="flex-1 overflow-auto py-2">
         <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-          {navItems.map((item) => (
+          {mainNavItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -134,7 +149,7 @@ export const SidebarContent = () => {
           <div className="mt-4">
             <button
               onClick={() => setSakramenOpen(!sakramenOpen)}
-              className="flex w-full items-center justify-between px-3 py-2 text-muted-foreground hover:text-primary"
+              className="flex w-full items-center justify-between px-3 py-2 text-muted-foreground hover:text-primary text-left"
             >
               <span className="flex items-center gap-3 font-semibold">
                 <BookOpen className="h-4 w-4" />
@@ -168,11 +183,11 @@ export const SidebarContent = () => {
             )}
           </div>
 
-          {/* Master Data Group */}
+          {/* Data Master Group */}
           <div className="mt-4">
             <button
               onClick={() => setMasterOpen(!masterOpen)}
-              className="flex w-full items-center justify-between px-3 py-2 text-muted-foreground hover:text-primary"
+              className="flex w-full items-center justify-between px-3 py-2 text-muted-foreground hover:text-primary text-left"
             >
               <span className="flex items-center gap-3 font-semibold">
                 <Tag className="h-4 w-4" />
@@ -223,6 +238,103 @@ export const SidebarContent = () => {
               </div>
             )}
           </div>
+
+          {/* Financial Features (Realisasi & Statistik) - Moved here per request */}
+          <div className="mt-4 space-y-1">
+            <Link
+              href="/keuangan/realisasi"
+              className={cn(
+                "flex items-center justify-between px-3 py-2 text-muted-foreground hover:text-primary font-semibold",
+                pathname === "/keuangan/realisasi"
+                  ? "bg-muted text-primary rounded-lg"
+                  : "text-muted-foreground"
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <Wallet className="h-4 w-4" />
+                Realisasi Keuangan
+              </div>
+            </Link>
+            <Link
+              href="/keuangan/statistik"
+              className={cn(
+                "flex items-center justify-between px-3 py-2 text-muted-foreground hover:text-primary font-semibold",
+                pathname === "/keuangan/statistik"
+                  ? "bg-muted text-primary rounded-lg"
+                  : "text-muted-foreground"
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <PieChart className="h-4 w-4" />
+                Statistik Keuangan
+              </div>
+            </Link>
+          </div>
+
+          {/* Data Master Keuangan Group */}
+          <div className="mt-4">
+            <button
+              onClick={() => setKeuanganMasterOpen(!keuanganMasterOpen)}
+              className="flex w-full items-center justify-between px-3 py-2 text-muted-foreground hover:text-primary text-left"
+            >
+              <span className="flex items-center gap-3 font-semibold">
+                <CreditCard className="h-4 w-4" />
+                Data Master Keuangan
+              </span>
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 transition-transform",
+                  keuanganMasterOpen && "rotate-180"
+                )}
+              />
+            </button>
+            {keuanganMasterOpen && (
+              <div className="ml-4 mt-1 space-y-1 border-l pl-2">
+                {/* 1. Kategori Keuangan */}
+                <Link
+                  href="/master-data/kategori-keuangan"
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
+                    pathname === "/master-data/kategori-keuangan"
+                      ? "bg-muted text-primary"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  <Tag className="h-4 w-4" />
+                  Kategori Keuangan
+                </Link>
+
+                {/* 2. Periode Anggaran */}
+                <Link
+                  href="/master-data/periode-anggaran"
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
+                    pathname === "/master-data/periode-anggaran"
+                      ? "bg-muted text-primary"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  <Calendar className="h-4 w-4" />
+                  Periode Anggaran
+                </Link>
+
+                {/* 3. Rancangan Item Keuangan (Existing Tree) */}
+                <Link
+                  href="/keuangan"
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
+                    pathname === "/keuangan"
+                      ? "bg-muted text-primary"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  <List className="h-4 w-4" />
+                  Rancangan Item
+                </Link>
+              </div>
+            )}
+          </div>
+
         </nav>
       </div>
     </div>

@@ -1,0 +1,122 @@
+import axios from "@/lib/axios";
+import { supabase } from "@/lib/supabaseClient";
+
+const authService = {
+  // Login user
+  login: async (credentials) => {
+    const response = await axios.post("/auth/login", credentials);
+    
+    if (response.data.success) {
+      // Store the session in localStorage
+      localStorage.setItem("supabase.auth.token", JSON.stringify(response.data.data.session));
+      
+      // Set the session in Supabase client
+      const { error } = await supabase.auth.setSession(response.data.data.session);
+      
+      if (error) {
+        console.error("Error setting session:", error);
+      }
+    }
+    
+    return response.data;
+  },
+
+  // Logout user
+  logout: async () => {
+    try {
+      // Get current session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        // Call logout API
+        await axios.post("/auth/logout", {}, {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        });
+      }
+      
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+      
+      // Remove from localStorage
+      localStorage.removeItem("supabase.auth.token");
+      
+      return { success: true };
+    } catch (error) {
+      console.error("Error during logout:", error);
+      // Still clear local data even if API call fails
+      await supabase.auth.signOut();
+      localStorage.removeItem("supabase.auth.token");
+      return { success: true };
+    }
+  },
+
+  // Get current user
+  getCurrentUser: async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error || !session) {
+        return null;
+      }
+
+      // Get user details from our API
+      const response = await axios.get("/auth/me", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      return response.data.data;
+    } catch (error) {
+      console.error("Error getting current user:", error);
+      return null;
+    }
+  },
+
+  // Check if user is authenticated
+  isAuthenticated: async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      return !!session;
+    } catch (error) {
+      return false;
+    }
+  },
+
+  // Get redirect URL based on user role
+  getRoleRedirectUrl: (role) => {
+    switch (role) {
+      case "ADMIN":
+        return "/admin/dashboard";
+      case "JEMAAT":
+        return "/jemaat/dashboard";
+      case "MAJELIS":
+        return "/majelis/dashboard";
+      case "EMPLOYEE":
+        return "/employee/dashboard";
+      default:
+        return "/dashboard";
+    }
+  },
+
+  // Refresh session
+  refreshSession: async () => {
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      
+      if (error) {
+        console.error("Error refreshing session:", error);
+        return null;
+      }
+
+      return data.session;
+    } catch (error) {
+      console.error("Error refreshing session:", error);
+      return null;
+    }
+  }
+};
+
+export default authService;

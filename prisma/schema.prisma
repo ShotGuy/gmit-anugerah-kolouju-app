@@ -232,3 +232,106 @@ model Klasis {
   baptis   Baptis[]
   sidi     Sidi[]
 }
+
+// ===== MODUL KEUANGAN (ANGGARAN & REALISASI) =====
+
+// 1. Kategori Keuangan (Misal: PENERIMAAN / PENGELUARAN)
+model KategoriKeuangan {
+  id       String  @id @default(uuid())
+  nama     String  @db.VarChar(100)
+  kode     String  @unique @db.VarChar(10) // "A" (Penerimaan), "B" (Pengeluaran)
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  itemKeuangan ItemKeuangan[]
+
+  @@map("kategori_keuangan")
+}
+
+// 2. Periode Anggaran (Misal: TA 2026)
+model PeriodeAnggaran {
+  id           String   @id @default(uuid())
+  nama         String   @db.VarChar(100)
+  tahun        Int
+  tanggalMulai DateTime @db.Date
+  tanggalAkhir DateTime @db.Date
+  status       String   @default("DRAFT") // DRAFT, ACTIVE, CLOSED
+  keterangan   String?  @db.Text
+  isActive     Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  itemKeuangan          ItemKeuangan[]
+  realisasiItemKeuangan RealisasiItemKeuangan[]
+
+  @@map("periode_anggaran")
+}
+
+// 3. Item Anggaran (Target/Rencana)
+model ItemKeuangan {
+  id         String  @id @default(uuid())
+  kategoriId String
+  periodeId  String
+  parentId   String? // Untuk hierarki (Induk -> Anak)
+
+  kode      String  @db.VarChar(20) // A.1, A.1.1
+  nama      String  @db.VarChar(255)
+  deskripsi String? @db.Text
+  
+  level  Int @default(1)
+  urutan Int @default(0)
+
+  // Target Anggaran
+  targetFrekuensi Int?
+  satuanFrekuensi String?  @db.VarChar(50) // Per Bulan, Per Tahun
+  nominalSatuan   Decimal? @db.Decimal(15, 2)
+  totalTarget     Decimal? @db.Decimal(15, 2) // Hasil kali (Frekuensi * Nominal)
+
+  // Cache Data Actual (Diupdate via API/Trigger saat realisasi berubah)
+  nominalActual   Decimal @default(0) @db.Decimal(15, 2)
+  jumlahTransaksi Int     @default(0)
+  
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  kategori KategoriKeuangan @relation(fields: [kategoriId], references: [id])
+  periode  PeriodeAnggaran  @relation(fields: [periodeId], references: [id])
+  parent   ItemKeuangan?    @relation("HierarkiItem", fields: [parentId], references: [id])
+  children ItemKeuangan[]   @relation("HierarkiItem")
+
+  realisasiItemKeuangan RealisasiItemKeuangan[]
+
+  @@unique([kategoriId, periodeId, kode])
+  @@index([periodeId])
+  @@index([parentId])
+  @@map("item_keuangan")
+}
+
+// 4. Realisasi (Transaksi Actual)
+model RealisasiItemKeuangan {
+  id             String   @id @default(uuid())
+  itemKeuanganId String
+  periodeId      String
+
+  tanggalRealisasi DateTime @db.Date
+  totalRealisasi   Decimal  @db.Decimal(15, 2)
+  keterangan       String?  @db.Text
+  buktiUrl         String?  @db.Text // URL foto bukti
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  itemKeuangan ItemKeuangan    @relation(fields: [itemKeuanganId], references: [id], onDelete: Cascade)
+  periode      PeriodeAnggaran @relation(fields: [periodeId], references: [id])
+
+  @@index([itemKeuanganId])
+  @@index([periodeId])
+  @@index([tanggalRealisasi])
+  @@map("realisasi_item_keuangan")
+}
