@@ -86,30 +86,30 @@ export function ExportDialog({ data, akunNama }: ExportDialogProps) {
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="kota" className="text-right">Kota</Label>
-                        <Input id="kota" value={kota} onChange={(e) => setKota(e.target.value)} className="col-span-3" />
+                    <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                        <Label htmlFor="kota" className="text-left sm:text-right">Kota</Label>
+                        <Input id="kota" value={kota} onChange={(e) => setKota(e.target.value)} className="col-span-1 sm:col-span-3" />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="tanggal" className="text-right">Tanggal</Label>
-                        <Input id="tanggal" value={tanggal} onChange={(e) => setTanggal(e.target.value)} className="col-span-3" />
+                    <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                        <Label htmlFor="tanggal" className="text-left sm:text-right">Tanggal</Label>
+                        <Input id="tanggal" value={tanggal} onChange={(e) => setTanggal(e.target.value)} className="col-span-1 sm:col-span-3" />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="ketua" className="text-right">Nama Ketua</Label>
-                        <Input id="ketua" value={ketua} onChange={(e) => setKetua(e.target.value)} placeholder="Ketua Majelis" className="col-span-3" />
+                    <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                        <Label htmlFor="ketua" className="text-left sm:text-right">Nama Ketua</Label>
+                        <Input id="ketua" value={ketua} onChange={(e) => setKetua(e.target.value)} placeholder="Ketua Majelis" className="col-span-1 sm:col-span-3" />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="bendahara" className="text-right">Nama Bendahara</Label>
-                        <Input id="bendahara" value={bendahara} onChange={(e) => setBendahara(e.target.value)} placeholder="Bendahara Jemaat" className="col-span-3" />
+                    <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                        <Label htmlFor="bendahara" className="text-left sm:text-right">Nama Bendahara</Label>
+                        <Input id="bendahara" value={bendahara} onChange={(e) => setBendahara(e.target.value)} placeholder="Bendahara Jemaat" className="col-span-1 sm:col-span-3" />
                     </div>
                 </div>
-                <DialogFooter className="sm:justify-between gap-2">
+                <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-3 sm:gap-2">
                     <div className="flex gap-2 w-full sm:w-auto">
                         <Button variant="secondary" onClick={handlePreview} className="gap-2 w-full sm:w-auto">
                             <Eye className="h-4 w-4" /> Preview
                         </Button>
                     </div>
-                    <div className="flex gap-2 w-full sm:w-auto">
+                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                         <Button variant="outline" onClick={handleDownloadExcel} className="gap-2 w-full sm:w-auto">
                             <FileSpreadsheet className="h-4 w-4 text-green-600" /> Excel
                         </Button>

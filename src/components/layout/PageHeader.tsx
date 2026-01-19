@@ -26,7 +26,7 @@ export default function PageHeader({
         <div className={cn("flex flex-col gap-4 pb-4 md:flex-row md:items-center md:justify-between border-b mb-6", className)}>
             <div className="space-y-1.5">
                 {breadcrumb && breadcrumb.length > 0 && (
-                    <nav className="flex items-center text-sm text-muted-foreground mb-2">
+                    <nav className="flex items-center flex-wrap text-sm text-muted-foreground mb-2">
                         {breadcrumb.map((item, index) => (
                             <div key={index} className="flex items-center">
                                 {index > 0 && <ChevronRight className="h-4 w-4 mx-1" />}

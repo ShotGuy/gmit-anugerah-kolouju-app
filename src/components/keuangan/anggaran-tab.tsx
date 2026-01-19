@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Filter, Search, Plus, ArrowRight, Target, TrendingUp, TrendingDown, BarChart3, Edit, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -191,7 +192,7 @@ export function AnggaranTab({ periodes, kategoris }: AnggaranTabProps) {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <div className="rounded-none border-t">
+                    <div className="hidden md:block rounded-none border-t">
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/5">
@@ -241,6 +242,57 @@ export function AnggaranTab({ periodes, kategoris }: AnggaranTabProps) {
                             </TableBody>
                         </Table>
                     </div>
+
+                    {/* MOBILE MONITORING LIST */}
+                    <div className="block md:hidden border-t divide-y">
+                        {!loading && summary?.items.length === 0 && (
+                            <div className="text-center py-12 text-muted-foreground">
+                                Tidak ada data ditemukan.
+                            </div>
+                        )}
+                        {summary?.items.map((item: any) => {
+                            // Calculate percentage for progress bar (cap at 100%)
+                            const percentage = Math.min(
+                                (Number(item.totalRealisasiAmount) / Number(item.totalTarget)) * 100,
+                                100
+                            );
+
+                            return (
+                                <Link key={item.id} href={`/keuangan/realisasi/${item.id}`} className="block p-4 hover:bg-muted/5 transition-colors">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                            <Badge variant="secondary" className="mb-1 text-[10px] px-1.5 font-mono">
+                                                {item.kode}
+                                            </Badge>
+                                            <h4 className="font-semibold text-sm line-clamp-2">{item.nama}</h4>
+                                        </div>
+                                        <ArrowRight className="h-4 w-4 text-muted-foreground mt-1" />
+                                    </div>
+
+                                    <div className="space-y-1 mb-3">
+                                        <div className="flex justify-between text-xs">
+                                            <span className="text-muted-foreground">Realisasi</span>
+                                            <span className="font-medium">{formatCurrency(item.totalRealisasiAmount)}</span>
+                                        </div>
+                                        <Progress value={percentage} className="h-2" />
+                                        <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                                            <span>Target: {formatCurrency(item.totalTarget)}</span>
+                                            <span>{percentage.toFixed(0)}%</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-between items-center text-xs mt-2 pt-2 border-t border-dashed">
+                                        <div className={item.varianceAmount >= 0 ? 'text-emerald-600 font-medium' : 'text-rose-600 font-medium'}>
+                                            {item.varianceAmount >= 0 ? '+' : ''}{formatCurrency(item.varianceAmount)}
+                                        </div>
+                                        <Badge variant={item.isTargetAchieved ? "outline" : "secondary"} className={`text-[10px] ${item.isTargetAchieved ? 'text-emerald-600 border-emerald-200 bg-emerald-50' : ''}`}>
+                                            {item.isTargetAchieved ? "Tercapai" : "Belum"}
+                                        </Badge>
+                                    </div>
+                                </Link>
+                            );
+                        })}
+                    </div>
                 </CardContent>
             </Card>
 
@@ -250,66 +302,124 @@ export function AnggaranTab({ periodes, kategoris }: AnggaranTabProps) {
                     <CardTitle className="text-base font-medium">Riwayat Transaksi Terakhir (50 Teratas)</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="bg-muted/5">
-                                <TableHead className="w-[150px]">Tanggal</TableHead>
-                                <TableHead className="w-[200px]">Item</TableHead>
-                                <TableHead>Keterangan</TableHead>
-                                <TableHead className="text-right w-[150px]">Jumlah</TableHead>
-                                <TableHead className="text-center w-[100px]">Aksi</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {history.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Belum ada riwayat transaksi.</TableCell>
+                    <div className="hidden md:block">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-muted/5">
+                                    <TableHead className="w-[150px]">Tanggal</TableHead>
+                                    <TableHead className="w-[200px]">Item</TableHead>
+                                    <TableHead>Keterangan</TableHead>
+                                    <TableHead className="text-right w-[150px]">Jumlah</TableHead>
+                                    <TableHead className="text-center w-[100px]">Aksi</TableHead>
                                 </TableRow>
-                            )}
-                            {history.map((trx: any) => (
-                                <TableRow key={trx.id} className="hover:bg-muted/5">
-                                    <TableCell className="text-sm">
+                            </TableHeader>
+                            <TableBody>
+                                {history.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Belum ada riwayat transaksi.</TableCell>
+                                    </TableRow>
+                                )}
+                                {history.map((trx: any) => (
+                                    <TableRow key={trx.id} className="hover:bg-muted/5">
+                                        <TableCell className="text-sm">
+                                            {new Date(trx.tanggalRealisasi).toLocaleDateString("id-ID", { day: '2-digit', month: 'short', year: 'numeric' })}
+                                        </TableCell>
+                                        <TableCell className="text-sm font-medium">{trx.itemKeuangan?.nama}</TableCell>
+                                        <TableCell className="text-sm text-muted-foreground truncate max-w-[300px]">
+                                            {trx.keterangan || "-"}
+                                        </TableCell>
+                                        <TableCell className="text-right font-medium text-emerald-600">
+                                            {formatCurrency(Number(trx.totalRealisasi))}
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <div className="flex justify-center items-center gap-1">
+                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-blue-600" asChild>
+                                                    <Link href={`/keuangan/realisasi/edit/${trx.id}`}><Edit className="h-3.5 w-3.5" /></Link>
+                                                </Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-red-600">
+                                                            <Trash2 className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Hapus Transaksi?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Tindakan ini tidak dapat dibatalkan. Saldo kas juga akan dikoreksi otomatis.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Batal</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDelete(trx.id)} className="bg-red-600 hover:bg-red-700 text-white">
+                                                                Hapus
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    {/* MOBILE HISTORY LIST */}
+                    <div className="block md:hidden divide-y">
+                        {history.length === 0 && (
+                            <div className="text-center py-8 text-muted-foreground">Belum ada riwayat transaksi.</div>
+                        )}
+                        {history.map((trx: any) => (
+                            <div key={trx.id} className="p-4 bg-white relative">
+                                {/* Top Row: Date & Actions */}
+                                <div className="flex justify-between items-start mb-2">
+                                    <span className="text-xs text-muted-foreground font-medium">
                                         {new Date(trx.tanggalRealisasi).toLocaleDateString("id-ID", { day: '2-digit', month: 'short', year: 'numeric' })}
-                                    </TableCell>
-                                    <TableCell className="text-sm font-medium">{trx.itemKeuangan?.nama}</TableCell>
-                                    <TableCell className="text-sm text-muted-foreground truncate max-w-[300px]">
+                                    </span>
+                                    <div className="flex gap-1">
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-blue-600" asChild>
+                                            <Link href={`/keuangan/realisasi/edit/${trx.id}`}><Edit className="h-3 w-3" /></Link>
+                                        </Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-red-600">
+                                                    <Trash2 className="h-3 w-3" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Hapus Transaksi?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Tindakan ini tidak dapat dibatalkan. Saldo kas juga akan dikoreksi otomatis.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDelete(trx.id)} className="bg-red-600 hover:bg-red-700">Hapus</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </div>
+                                </div>
+
+                                {/* Middle Row: Item & Amount */}
+                                <div className="mb-2">
+                                    <h4 className="text-sm font-semibold">{trx.itemKeuangan?.nama}</h4>
+                                    <div className="text-xs text-muted-foreground line-clamp-1 italic">
                                         {trx.keterangan || "-"}
-                                    </TableCell>
-                                    <TableCell className="text-right font-medium text-emerald-600">
+                                    </div>
+                                </div>
+
+                                {/* Bottom Row: Amount */}
+                                <div className="flex justify-end border-t border-dashed pt-2 mt-2">
+                                    <span className="text-sm font-bold text-emerald-600">
                                         {formatCurrency(Number(trx.totalRealisasi))}
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <div className="flex justify-center items-center gap-1">
-                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-blue-600" asChild>
-                                                <Link href={`/keuangan/realisasi/edit/${trx.id}`}><Edit className="h-3.5 w-3.5" /></Link>
-                                            </Button>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-red-600">
-                                                        <Trash2 className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Hapus Transaksi?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            Tindakan ini tidak dapat dibatalkan. Saldo kas juga akan dikoreksi otomatis.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Batal</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDelete(trx.id)} className="bg-red-600 hover:bg-red-700 text-white">
-                                                            Hapus
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </CardContent>
             </Card>
         </div>

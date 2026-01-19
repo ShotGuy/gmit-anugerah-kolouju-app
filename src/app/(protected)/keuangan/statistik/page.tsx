@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
 
 // Helper for colors
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
@@ -134,7 +135,7 @@ export default function StatistikPage() {
     }, [stats, selectedParentId]);
 
     return (
-        <div className="space-y-6 container mx-auto p-6 max-w-7xl animate-in fade-in duration-500">
+        <div className="space-y-6 container mx-auto p-4 md:p-6 max-w-7xl animate-in fade-in duration-500 overflow-x-hidden">
             <PageHeader
                 title="Analisis Keuangan"
                 description="Pusat data statistik dan monitoring anggaran gereja"
@@ -171,7 +172,7 @@ export default function StatistikPage() {
             ) : dashboardData ? (
                 <div className="space-y-6">
                     {/* Breadcrumb Scope Indicator */}
-                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                    <div className="flex items-center flex-wrap space-x-2 text-sm text-muted-foreground">
                         <span className="font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Fokus:</span>
                         <span className="flex items-center">
                             {selectedParentId === "root" ? "Semua Bidang (Root)" : (
@@ -279,7 +280,7 @@ export default function StatistikPage() {
                         </Card>
                     </div>
 
-                    {/* Table */}
+                    {/* Table / List */}
                     <Card className="shadow-sm">
                         <CardHeader className="bg-muted/30 border-b">
                             <div className="flex items-center justify-between">
@@ -290,60 +291,97 @@ export default function StatistikPage() {
                             </div>
                         </CardHeader>
                         <CardContent className="p-0">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Kode</TableHead>
-                                        <TableHead>Nama Item</TableHead>
-                                        <TableHead className="text-right">Target</TableHead>
-                                        <TableHead className="text-right">Realisasi</TableHead>
-                                        <TableHead className="text-center">% Capaian</TableHead>
-                                        <TableHead className="text-center">Status</TableHead>
-                                        <TableHead className="text-center">Aksi</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {dashboardData.childItems.map((item: any) => (
-                                        <TableRow key={item.id} className="hover:bg-muted/50">
-                                            <TableCell className="font-mono text-xs">{item.kode}</TableCell>
-                                            <TableCell>
-                                                <span className="font-medium">{item.nama}</span>
-                                                {/* If logic for 'hasChildren' exists, show badge. Checking logic... */}
-                                                {/* In getRealisasiSummary output, items usually have relations? We'll check 'varianceAmount' logic exists on items. */}
-                                            </TableCell>
-                                            <TableCell className="text-right">{formatCurrency(item.totalTarget)}</TableCell>
-                                            <TableCell className="text-right font-bold">{formatCurrency(item.totalRealisasiAmount)}</TableCell>
-                                            <TableCell className="text-center">{typeof item.achievementPercentage === 'number' ? item.achievementPercentage.toFixed(1) : '0.0'}%</TableCell>
-                                            <TableCell className="text-center">
-                                                <Badge variant={item.isTargetAchieved ? "default" : "secondary"} className="text-[10px]">
-                                                    {item.isTargetAchieved ? "Tercapai" : "Belum"}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                {/* Drill down button if it's a parent / has children. 
-                                                     Note: getRealisasiSummary might need to return 'hasChildren' or we infer it. 
-                                                     For now, infer if it exists in parentId list of others? No efficient. 
-                                                     The reference code used 'item.hasChildren'.
-                                                     We need to ensure API returns it. 
-                                                  */}
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-8 text-xs text-blue-600"
-                                                    onClick={() => setSelectedParentId(item.id)}
-                                                >
-                                                    Drill Down
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                    {dashboardData.childItems.length === 0 && (
+                            {/* DESKTOP TABLE */}
+                            <div className="hidden md:block">
+                                <Table>
+                                    <TableHeader>
                                         <TableRow>
-                                            <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Tidak ada sub-item.</TableCell>
+                                            <TableHead>Kode</TableHead>
+                                            <TableHead>Nama Item</TableHead>
+                                            <TableHead className="text-right">Target</TableHead>
+                                            <TableHead className="text-right">Realisasi</TableHead>
+                                            <TableHead className="text-center">% Capaian</TableHead>
+                                            <TableHead className="text-center">Status</TableHead>
+                                            <TableHead className="text-center">Aksi</TableHead>
                                         </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {dashboardData.childItems.map((item: any) => (
+                                            <TableRow key={item.id} className="hover:bg-muted/50">
+                                                <TableCell className="font-mono text-xs">{item.kode}</TableCell>
+                                                <TableCell>
+                                                    <span className="font-medium">{item.nama}</span>
+                                                </TableCell>
+                                                <TableCell className="text-right">{formatCurrency(item.totalTarget)}</TableCell>
+                                                <TableCell className="text-right font-bold">{formatCurrency(item.totalRealisasiAmount)}</TableCell>
+                                                <TableCell className="text-center">{typeof item.achievementPercentage === 'number' ? item.achievementPercentage.toFixed(1) : '0.0'}%</TableCell>
+                                                <TableCell className="text-center">
+                                                    <Badge variant={item.isTargetAchieved ? "default" : "secondary"} className="text-[10px]">
+                                                        {item.isTargetAchieved ? "Tercapai" : "Belum"}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-8 text-xs text-blue-600"
+                                                        onClick={() => setSelectedParentId(item.id)}
+                                                    >
+                                                        Drill Down
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                        {dashboardData.childItems.length === 0 && (
+                                            <TableRow>
+                                                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Tidak ada sub-item.</TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+
+                            {/* MOBILE LIST VIEW */}
+                            <div className="block md:hidden divide-y">
+                                {dashboardData.childItems.length === 0 && (
+                                    <div className="text-center py-8 text-muted-foreground">Tidak ada sub-item.</div>
+                                )}
+                                {dashboardData.childItems.map((item: any) => {
+                                    const percentage = typeof item.achievementPercentage === 'number' ? Math.min(item.achievementPercentage, 100) : 0;
+                                    return (
+                                        <div key={item.id} className="p-4 bg-white" onClick={() => setSelectedParentId(item.id)}>
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <Badge variant="outline" className="mb-1 text-[10px] px-1.5 font-mono">
+                                                        {item.kode}
+                                                    </Badge>
+                                                    <h4 className="font-semibold text-sm">{item.nama}</h4>
+                                                </div>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2 text-muted-foreground">
+                                                    <ChevronRight className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between text-xs">
+                                                    <span className="text-muted-foreground">Realisasi: <span className="text-foreground font-medium">{formatCurrency(item.totalRealisasiAmount)}</span></span>
+                                                    <span className="font-bold text-blue-600">{percentage.toFixed(1)}%</span>
+                                                </div>
+                                                <Progress value={percentage} className="h-2" />
+                                                <div className="flex justify-between text-xs text-muted-foreground">
+                                                    <span>Target: {formatCurrency(item.totalTarget)}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-3 pt-2 border-t border-dashed flex items-center justify-between">
+                                                <Badge variant={item.isTargetAchieved ? "default" : "secondary"} className="text-[10px]">
+                                                    {item.isTargetAchieved ? "Target Tercapai" : "Belum Tercapai"}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </CardContent>
                     </Card>
                 </div>

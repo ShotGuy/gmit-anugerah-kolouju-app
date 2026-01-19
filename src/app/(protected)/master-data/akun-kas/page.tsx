@@ -102,54 +102,99 @@ export default function AkunKasPage() {
                     </Button>
                 </div>
                 <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Nama Akun</TableHead>
-                                <TableHead>Deskripsi</TableHead>
-                                <TableHead>Saldo Saat Ini</TableHead>
-                                <TableHead className="text-center">Default</TableHead>
-                                <TableHead className="text-right">Aksi</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {isLoading ? (
+                    {/* DESKTOP TABLE */}
+                    <div className="hidden md:block">
+                        <Table>
+                            <TableHeader>
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-8">Memuat...</TableCell>
+                                    <TableHead>Nama Akun</TableHead>
+                                    <TableHead>Deskripsi</TableHead>
+                                    <TableHead>Saldo Saat Ini</TableHead>
+                                    <TableHead className="text-center">Default</TableHead>
+                                    <TableHead className="text-right">Aksi</TableHead>
                                 </TableRow>
-                            ) : filteredData.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Belum ada akun kas</TableCell>
-                                </TableRow>
-                            ) : (
-                                filteredData.map((item) => (
-                                    <TableRow key={item.id}>
-                                        <TableCell className="font-medium flex items-center gap-2">
-                                            <div className="p-2 bg-blue-100/50 rounded-lg text-blue-600">
-                                                <Wallet className="h-4 w-4" />
-                                            </div>
-                                            {item.nama}
-                                        </TableCell>
-                                        <TableCell className="text-muted-foreground">{item.deskripsi || "-"}</TableCell>
-                                        <TableCell className="font-mono font-medium">
-                                            {formatCurrency(item.saldoSaatIni)}
-                                        </TableCell>
-                                        <TableCell className="text-center">
-                                            {item.isDefault && <Badge variant="secondary">Default</Badge>}
-                                        </TableCell>
-                                        <TableCell className="text-right space-x-2">
-                                            <Button variant="ghost" size="icon" onClick={() => { setEditingItem(item); setIsOpen(true); }}>
-                                                <Pencil className="h-4 w-4 text-blue-600" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}>
-                                                <Trash2 className="h-4 w-4 text-red-600" />
-                                            </Button>
-                                        </TableCell>
+                            </TableHeader>
+                            <TableBody>
+                                {isLoading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center py-8">Memuat...</TableCell>
                                     </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
+                                ) : filteredData.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Belum ada akun kas</TableCell>
+                                    </TableRow>
+                                ) : (
+                                    filteredData.map((item) => (
+                                        <TableRow key={item.id}>
+                                            <TableCell className="font-medium flex items-center gap-2">
+                                                <div className="p-2 bg-blue-100/50 rounded-lg text-blue-600">
+                                                    <Wallet className="h-4 w-4" />
+                                                </div>
+                                                {item.nama}
+                                            </TableCell>
+                                            <TableCell className="text-muted-foreground">{item.deskripsi || "-"}</TableCell>
+                                            <TableCell className="font-mono font-medium">
+                                                {formatCurrency(item.saldoSaatIni)}
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                {item.isDefault && <Badge variant="secondary">Default</Badge>}
+                                            </TableCell>
+                                            <TableCell className="text-right space-x-2">
+                                                <Button variant="ghost" size="icon" onClick={() => { setEditingItem(item); setIsOpen(true); }}>
+                                                    <Pencil className="h-4 w-4 text-blue-600" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}>
+                                                    <Trash2 className="h-4 w-4 text-red-600" />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    {/* MOBILE LIST VIEW */}
+                    <div className="block md:hidden divide-y">
+                        {isLoading ? (
+                            <div className="text-center p-8 text-muted-foreground">Memuat...</div>
+                        ) : filteredData.length === 0 ? (
+                            <div className="text-center p-8 text-muted-foreground">Belum ada akun kas.</div>
+                        ) : (
+                            filteredData.map((item) => (
+                                <div key={item.id} className="p-4 flex flex-col gap-4 bg-card">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2.5 bg-blue-100 rounded-lg text-blue-600">
+                                                <Wallet className="h-5 w-5" />
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <h3 className="font-semibold text-base">{item.nama}</h3>
+                                                    {item.isDefault && <Badge variant="secondary" className="text-[10px] px-1.5 h-5">Default</Badge>}
+                                                </div>
+                                                <div className="text-xs text-muted-foreground mt-0.5">{item.deskripsi || "Tanpa deskripsi"}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between p-3 bg-muted/40 rounded-lg border border-dashed">
+                                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Saldo Saat Ini</span>
+                                        <span className="font-bold text-lg font-mono text-blue-700">{formatCurrency(item.saldoSaatIni)}</span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <Button variant="outline" size="sm" className="w-full text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => { setEditingItem(item); setIsOpen(true); }}>
+                                            <Pencil className="mr-2 h-3.5 w-3.5" /> Edit
+                                        </Button>
+                                        <Button variant="outline" size="sm" className="w-full text-red-600 border-red-200 hover:bg-red-50" onClick={() => handleDelete(item.id)}>
+                                            <Trash2 className="mr-2 h-3.5 w-3.5" /> Hapus
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
                 </CardContent>
             </Card>
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -139,8 +140,8 @@ export function MutasiTab({ akunList }: MutasiTabProps) {
                             </div>
                         </div>
 
-                        {/* TABLE VIEW (Always Visible) */}
-                        <div className="rounded-md border">
+                        {/* TABLE VIEW (Desktop) */}
+                        <div className="hidden md:block rounded-md border">
                             <Table className="border-collapse w-full text-sm">
                                 <TableHeader>
                                     <TableRow className="bg-gray-100 print:bg-gray-200">
@@ -179,20 +180,20 @@ export function MutasiTab({ akunList }: MutasiTabProps) {
                                                     <span className="font-medium text-sm mt-0.5">{item.uraian}</span>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="border-r border-gray-300 text-right text-blue-700 align-top py-3">
-                                                {item.debet > 0 ? formatCurrency(item.debet).replace("Rp", "") : "-"}
+                                            <TableCell className="border-r border-gray-300 text-right align-top py-3 font-medium text-blue-700 bg-blue-50/10">
+                                                {item.debet > 0 ? formatCurrency(item.debet) : "-"}
                                             </TableCell>
-                                            <TableCell className="border-r border-gray-300 text-right text-red-700 align-top py-3">
-                                                {item.kredit > 0 ? formatCurrency(item.kredit).replace("Rp", "") : "-"}
+                                            <TableCell className="border-r border-gray-300 text-right align-top py-3 font-medium text-red-700 bg-red-50/10">
+                                                {item.kredit > 0 ? formatCurrency(item.kredit) : "-"}
                                             </TableCell>
-                                            <TableCell className="border-gray-300 text-right font-medium align-top py-3">
-                                                {formatCurrency(item.saldoBerjalan).replace("Rp", "")}
+                                            <TableCell className="border-gray-300 text-right align-top py-3 font-bold">
+                                                {formatCurrency(item.saldoBerjalan)}
                                             </TableCell>
                                         </TableRow>
                                     ))}
                                     {report.items.length === 0 && (
                                         <TableRow>
-                                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground border-gray-300 italic">
+                                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground border border-gray-300">
                                                 Tidak ada transaksi pada periode ini.
                                             </TableCell>
                                         </TableRow>
@@ -201,7 +202,65 @@ export function MutasiTab({ akunList }: MutasiTabProps) {
                             </Table>
                         </div>
 
-                        {/* Removed Mobile List View to strictly follow Table Request */}
+                        {/* MOBILE CARD VIEW (Phone) */}
+                        <div className="block md:hidden space-y-4">
+                            {/* Saldo Awal Card */}
+                            <Card className="bg-gray-50 border-dashed">
+                                <CardContent className="p-4 flex justify-between items-center">
+                                    <span className="text-sm font-medium text-muted-foreground">Saldo Awal</span>
+                                    <span className="text-lg font-bold">{formatCurrency(report.saldoAwal)}</span>
+                                </CardContent>
+                            </Card>
+
+                            {report.items.length === 0 ? (
+                                <div className="text-center py-8 text-muted-foreground border rounded-lg bg-gray-50">
+                                    Tidak ada transaksi pada periode ini.
+                                </div>
+                            ) : (
+                                report.items.map((item) => (
+                                    <Card key={item.id} className="shadow-sm border">
+                                        <CardContent className="p-4">
+                                            {/* Header: Date & No Bukti */}
+                                            <div className="flex justify-between items-start mb-3 border-b pb-2">
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Tanggal</span>
+                                                    <span className="text-sm font-semibold">
+                                                        {new Date(item.tanggal).toLocaleDateString("id-ID", { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                    </span>
+                                                </div>
+                                                <div className="flex flex-col items-end">
+                                                    <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">No. Bukti</span>
+                                                    <Badge variant="outline" className="font-mono text-xs">{item.noBukti || "-"}</Badge>
+                                                </div>
+                                            </div>
+
+                                            {/* Body: Uraian */}
+                                            <div className="mb-4">
+                                                {item.kodeItem && item.namaItem && (
+                                                    <Badge variant="secondary" className="mb-1.5 text-[10px] px-1.5">
+                                                        {item.kodeItem} - {item.namaItem}
+                                                    </Badge>
+                                                )}
+                                                <p className="text-sm font-medium leading-relaxed">{item.uraian}</p>
+                                            </div>
+
+                                            {/* Footer: Nominal */}
+                                            <div className="bg-gray-50/50 -mx-4 -mb-4 p-3 border-t grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <span className="text-xs text-muted-foreground block mb-0.5">Mutasi</span>
+                                                    {item.debet > 0 && <span className="text-blue-600 font-bold block text-sm">+ {formatCurrency(item.debet)}</span>}
+                                                    {item.kredit > 0 && <span className="text-red-600 font-bold block text-sm">- {formatCurrency(item.kredit)}</span>}
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className="text-xs text-muted-foreground block mb-0.5">Saldo Akhir</span>
+                                                    <span className="font-bold text-sm">{formatCurrency(item.saldoBerjalan)}</span>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))
+                            )}
+                        </div>
 
                         {/* SIGNATURE (Print Only) */}
                         <div className="hidden print:grid mt-12 pt-8 grid-cols-2 text-center break-inside-avoid">

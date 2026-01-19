@@ -179,66 +179,112 @@ export default function KategoriKeuanganClient({
                 </CardHeader>
                 <CardContent>
                     <div className="rounded-md border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[100px]">Kode</TableHead>
-                                    <TableHead>Nama Kategori</TableHead>
-                                    <TableHead className="text-center">Penggunaan di Anggaran</TableHead>
-                                    <TableHead className="w-[80px]"></TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredData.length === 0 ? (
+                        {/* DESKTOP TABLE */}
+                        <div className="hidden md:block">
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">
-                                            Tidak ada data kategori.
-                                        </TableCell>
+                                        <TableHead className="w-[100px]">Kode</TableHead>
+                                        <TableHead>Nama Kategori</TableHead>
+                                        <TableHead className="text-center">Penggunaan di Anggaran</TableHead>
+                                        <TableHead className="w-[80px]"></TableHead>
                                     </TableRow>
-                                ) : (
-                                    filteredData.map((item) => (
-                                        <TableRow key={item.id}>
-                                            <TableCell className="font-medium">
-                                                <Badge variant="outline">{item.kode}</Badge>
-                                            </TableCell>
-                                            <TableCell>{item.nama}</TableCell>
-                                            <TableCell className="text-center">
-                                                {item._count?.itemKeuangan || 0} Item
-                                            </TableCell>
-                                            <TableCell>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" className="h-8 w-8 p-0">
-                                                            <span className="sr-only">Open menu</span>
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>Aksi</DropdownMenuLabel>
-                                                        <DropdownMenuItem onClick={() => handleEdit(item)}>
-                                                            <Pencil className="mr-2 h-4 w-4" /> Edit
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            onClick={() => handleDelete(item.id, item.nama)}
-                                                            className="text-destructive focus:text-destructive"
-                                                            disabled={isDeleting === item.id}
-                                                        >
-                                                            {isDeleting === item.id ? (
-                                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                            ) : (
-                                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                            )}
-                                                            Hapus
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredData.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={4} className="h-24 text-center">
+                                                Tidak ada data kategori.
                                             </TableCell>
                                         </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
+                                    ) : (
+                                        filteredData.map((item) => (
+                                            <TableRow key={item.id}>
+                                                <TableCell className="font-medium">
+                                                    <Badge variant="outline">{item.kode}</Badge>
+                                                </TableCell>
+                                                <TableCell>{item.nama}</TableCell>
+                                                <TableCell className="text-center">
+                                                    {item._count?.itemKeuangan || 0} Item
+                                                </TableCell>
+                                                <TableCell>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                                                <span className="sr-only">Open menu</span>
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                                                            <DropdownMenuItem onClick={() => handleEdit(item)}>
+                                                                <Pencil className="mr-2 h-4 w-4" /> Edit
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem
+                                                                onClick={() => handleDelete(item.id, item.nama)}
+                                                                className="text-destructive focus:text-destructive"
+                                                                disabled={isDeleting === item.id}
+                                                            >
+                                                                {isDeleting === item.id ? (
+                                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                                ) : (
+                                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                                )}
+                                                                Hapus
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+
+                        {/* MOBILE LIST VIEW */}
+                        <div className="block md:hidden divide-y">
+                            {filteredData.length === 0 ? (
+                                <div className="text-center p-8 text-muted-foreground">Tidak ada data.</div>
+                            ) : (
+                                filteredData.map((item) => (
+                                    <div key={item.id} className="p-4 flex flex-col gap-3 bg-card">
+                                        <div className="flex justify-between items-start">
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="outline" className="font-mono">{item.kode}</Badge>
+                                                    <h3 className="font-semibold">{item.nama}</h3>
+                                                </div>
+                                                <div className="text-sm text-muted-foreground flex items-center gap-1">
+                                                    <Tag className="h-3 w-3" />
+                                                    {item._count?.itemKeuangan || 0} Item Anggaran
+                                                </div>
+                                            </div>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="-mr-2 h-8 w-8">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => handleEdit(item)}>
+                                                        <Pencil className="mr-2 h-4 w-4" /> Edit
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem
+                                                        onClick={() => handleDelete(item.id, item.nama)}
+                                                        className="text-destructive"
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4" /> Hapus
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
                     </div>
                 </CardContent>
             </Card>

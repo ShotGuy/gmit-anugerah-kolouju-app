@@ -239,78 +239,137 @@ export default function PeriodeAnggaranClient({
                 </CardHeader>
                 <CardContent>
                     <div className="rounded-md border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Nama Periode</TableHead>
-                                    <TableHead>Tahun</TableHead>
-                                    <TableHead>Rentang Waktu</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-center">Statistik</TableHead>
-                                    <TableHead className="w-[80px]"></TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredData.length === 0 ? (
+                        {/* DESKTOP TABLE */}
+                        <div className="hidden md:block">
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-24 text-center">
-                                            Tidak ada data periode.
-                                        </TableCell>
+                                        <TableHead>Nama Periode</TableHead>
+                                        <TableHead>Tahun</TableHead>
+                                        <TableHead>Rentang Waktu</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-center">Statistik</TableHead>
+                                        <TableHead className="w-[80px]"></TableHead>
                                     </TableRow>
-                                ) : (
-                                    filteredData.map((item) => (
-                                        <TableRow key={item.id}>
-                                            <TableCell className="font-medium">
-                                                <div>{item.nama}</div>
-                                                {item.keterangan && (
-                                                    <div className="text-xs text-muted-foreground">{item.keterangan}</div>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>{item.tahun}</TableCell>
-                                            <TableCell>
-                                                <div className="text-sm">
-                                                    {formatDate(item.tanggalMulai)} - {formatDate(item.tanggalAkhir)}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge
-                                                    variant={item.status === 'ACTIVE' ? "default" : "secondary"}
-                                                    className={item.status === 'ACTIVE' ? "bg-green-500 hover:bg-green-600" : ""}
-                                                >
-                                                    {item.status}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                <Badge variant="outline">{item._count?.itemKeuangan || 0} Item Anggaran</Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" className="h-8 w-8 p-0">
-                                                            <span className="sr-only">Open menu</span>
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>Aksi</DropdownMenuLabel>
-                                                        <DropdownMenuItem onClick={() => handleEdit(item)}>
-                                                            <Pencil className="mr-2 h-4 w-4" /> Edit
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            onClick={() => verifyDelete(item)}
-                                                            className="text-destructive focus:text-destructive"
-                                                        >
-                                                            <Trash2 className="mr-2 h-4 w-4" /> Hapus
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredData.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="h-24 text-center">
+                                                Tidak ada data periode.
                                             </TableCell>
                                         </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
+                                    ) : (
+                                        filteredData.map((item) => (
+                                            <TableRow key={item.id}>
+                                                <TableCell className="font-medium">
+                                                    <div>{item.nama}</div>
+                                                    {item.keterangan && (
+                                                        <div className="text-xs text-muted-foreground">{item.keterangan}</div>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>{item.tahun}</TableCell>
+                                                <TableCell>
+                                                    <div className="text-sm">
+                                                        {formatDate(item.tanggalMulai)} - {formatDate(item.tanggalAkhir)}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge
+                                                        variant={item.status === 'ACTIVE' ? "default" : "secondary"}
+                                                        className={item.status === 'ACTIVE' ? "bg-green-500 hover:bg-green-600" : ""}
+                                                    >
+                                                        {item.status}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <Badge variant="outline">{item._count?.itemKeuangan || 0} Item Anggaran</Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                                                <span className="sr-only">Open menu</span>
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                                                            <DropdownMenuItem onClick={() => handleEdit(item)}>
+                                                                <Pencil className="mr-2 h-4 w-4" /> Edit
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem
+                                                                onClick={() => verifyDelete(item)}
+                                                                className="text-destructive focus:text-destructive"
+                                                            >
+                                                                <Trash2 className="mr-2 h-4 w-4" /> Hapus
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+
+                        {/* MOBILE LIST VIEW */}
+                        <div className="block md:hidden divide-y">
+                            {filteredData.length === 0 ? (
+                                <div className="text-center p-8 text-muted-foreground">Tidak ada data.</div>
+                            ) : (
+                                filteredData.map((item) => (
+                                    <div key={item.id} className="p-4 bg-card">
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <h3 className="font-semibold">{item.nama}</h3>
+                                                    <Badge
+                                                        variant={item.status === 'ACTIVE' ? "default" : "secondary"}
+                                                        className={`text-[10px] px-1.5 h-5 ${item.status === 'ACTIVE' ? "bg-green-500 hover:bg-green-600" : ""}`}
+                                                    >
+                                                        {item.status}
+                                                    </Badge>
+                                                </div>
+                                                <div className="text-sm text-muted-foreground">Tahun: {item.tahun}</div>
+                                            </div>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="-mr-2 h-8 w-8">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => handleEdit(item)}>
+                                                        <Pencil className="mr-2 h-4 w-4" /> Edit
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem
+                                                        onClick={() => verifyDelete(item)}
+                                                        className="text-destructive"
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4" /> Hapus
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+
+                                        <div className="text-xs text-muted-foreground bg-muted/40 p-2 rounded mb-2">
+                                            {formatDate(item.tanggalMulai)} - {formatDate(item.tanggalAkhir)}
+                                        </div>
+
+                                        <div className="flex items-center gap-2 text-xs">
+                                            <Badge variant="outline">{item._count?.itemKeuangan || 0} Item Anggaran</Badge>
+                                            {item.keterangan && (
+                                                <span className="text-muted-foreground truncate max-w-[150px]">{item.keterangan}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
                     </div>
                 </CardContent>
             </Card>

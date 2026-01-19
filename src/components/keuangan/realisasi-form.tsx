@@ -348,7 +348,8 @@ export function RealisasiForm({ periodes, kategoris, akunKasList, initialData }:
                             </div>
 
                         </CardContent>
-                        <CardFooter className="justify-end gap-2">
+                        {/* Desktop Footer (Hidden on Mobile) */}
+                        <CardFooter className="hidden md:flex justify-end gap-2">
                             <Button variant="outline" type="button" onClick={() => router.back()}>
                                 Batal
                             </Button>
@@ -358,6 +359,17 @@ export function RealisasiForm({ periodes, kategoris, akunKasList, initialData }:
                             </Button>
                         </CardFooter>
                     </Card>
+
+                    {/* Mobile Sticky Footer */}
+                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] md:hidden z-50 flex gap-2">
+                        <Button variant="outline" type="button" className="flex-1" onClick={() => router.back()}>
+                            Batal
+                        </Button>
+                        <Button type="submit" disabled={isPending} className="flex-[2]">
+                            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                            {isEditMode ? "Simpan" : "Simpan"}
+                        </Button>
+                    </div>
                 </form>
             </div>
 
@@ -418,4 +430,3 @@ export function RealisasiForm({ periodes, kategoris, akunKasList, initialData }:
         </div>
     );
 }
-

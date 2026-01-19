@@ -230,81 +230,95 @@ export default function BudgetTreeClient({
     const renderRow = (item: ItemKeuangan & { children: ItemKeuangan[] }, level: number) => {
         const hasChildren = item.children && item.children.length > 0;
         const isExpanded = expandedNodes.has(item.id);
-        // Adjust padding if we are showing a filtered/flattened view where levels might look weird? 
-        // Actually keep indentation based on data level if possible, or dynamic level?
-        // Using `item.level` property is better if data has it.
         const indentLevel = (searchQuery || filterLevel !== "all") ? 0 : level;
-        const paddingLeft = indentLevel * 24 + 16;
+        const paddingLeft = indentLevel * 24 + 16; // Maintain indentation logic
 
         return (
             <div key={item.id}>
                 <div className={`
-          flex items-center border-b border-border/50 hover:bg-muted/50 transition-colors py-2 pr-4
-          ${(level === 0 && !searchQuery) ? "bg-muted/10 font-medium" : "text-sm"}
+          flex flex-col border-b border-border/50 hover:bg-muted/50 transition-colors py-2 pr-4
+          ${(level === 0 && !searchQuery) ? "bg-muted/10" : ""}
         `}>
-                    {/* Tree Control & Name */}
-                    <div className="flex-1 flex items-center min-w-[300px]" style={{ paddingLeft }}>
-                        <div className="w-6 mr-1 flex-shrink-0">
-                            {hasChildren && !searchQuery && filterLevel === "all" && (
-                                <button onClick={() => toggleExpand(item.id)} className="text-muted-foreground hover:text-foreground">
-                                    {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                                </button>
-                            )}
+                    <div className="flex items-center">
+                        {/* Tree Control & Name */}
+                        <div className="flex-1 flex items-center min-w-0" style={{ paddingLeft }}>
+                            <div className="w-6 mr-1 flex-shrink-0">
+                                {hasChildren && !searchQuery && filterLevel === "all" && (
+                                    <button onClick={() => toggleExpand(item.id)} className="text-muted-foreground hover:text-foreground">
+                                        {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-2 truncate pr-2">
+                                <Badge variant="outline" className="font-mono text-[10px] h-5 px-1 flex-shrink-0">{item.kode}</Badge>
+                                <span className={`truncate text-sm ${(level === 0 && !searchQuery) ? "font-medium" : ""}`} title={item.nama}>
+                                    {item.nama}
+                                </span>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2 truncate">
-                            <Badge variant="outline" className="font-mono text-[10px] h-5 px-1">{item.kode}</Badge>
-                            <span className="truncate" title={item.nama}>{item.nama}</span>
+
+                        {/* Desktop: Target */}
+                        <div className="w-[150px] text-right text-xs hidden md:block">
+                            {item.totalTarget ? (
+                                <span className="font-mono">{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(item.totalTarget)}</span>
+                            ) : "-"}
+                        </div>
+
+                        {/* Desktop: Realisasi */}
+                        <div className="w-[150px] text-right text-xs hidden md:block px-4">
+                            {item.nominalActual ? (
+                                <span className="font-mono text-green-600 dark:text-green-400">
+                                    {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(item.nominalActual)}
+                                </span>
+                            ) : "-"}
+                        </div>
+
+                        {/* Desktop: Progress */}
+                        <div className="w-[80px] text-center text-xs hidden sm:block">
+                            {item.totalTarget && item.totalTarget > 0 ? (
+                                <Badge variant={(item.nominalActual || 0) >= item.totalTarget ? "default" : "secondary"} className="text-[10px]">
+                                    {Math.round(((item.nominalActual || 0) / item.totalTarget) * 100)}%
+                                </Badge>
+                            ) : "-"}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="w-[50px] flex justify-end">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => handleAddChild(item)}>
+                                        <Plus className="mr-2 h-4 w-4" /> Tambah Sub-Item
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleEdit(item)}>
+                                        <Edit className="mr-2 h-4 w-4" /> Edit Item
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => handleDelete(item.id, item.nama)} className="text-red-600 focus:text-red-600">
+                                        <Trash2 className="mr-2 h-4 w-4" /> Hapus
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     </div>
 
-                    {/* Target */}
-                    <div className="w-[150px] text-right text-xs hidden md:block">
-                        {item.totalTarget ? (
-                            <span className="font-mono">{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(item.totalTarget)}</span>
-                        ) : "-"}
-                    </div>
-
-                    {/* Realisasi */}
-                    <div className="w-[150px] text-right text-xs hidden md:block px-4">
-                        {item.nominalActual ? (
-                            <span className="font-mono text-green-600 dark:text-green-400">
-                                {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(item.nominalActual)}
-                            </span>
-                        ) : "-"}
-                    </div>
-
-                    {/* Progress */}
-                    <div className="w-[80px] text-center text-xs hidden sm:block">
-                        {item.totalTarget && item.totalTarget > 0 ? (
-                            <Badge variant={(item.nominalActual || 0) >= item.totalTarget ? "default" : "secondary"} className="text-[10px]">
+                    {/* Mobile Only: Stats Row */}
+                    <div className="flex md:hidden items-center justify-between text-[11px] text-muted-foreground mt-1" style={{ paddingLeft: paddingLeft + 28 }}>
+                        <div className="flex flex-col gap-0.5">
+                            <span>Target: {item.totalTarget ? new Intl.NumberFormat("id-ID", { compactDisplay: "short", notation: "compact", currency: "IDR" }).format(item.totalTarget) : "-"}</span>
+                            <span>Real: {item.nominalActual ? new Intl.NumberFormat("id-ID", { compactDisplay: "short", notation: "compact", currency: "IDR" }).format(item.nominalActual) : "-"}</span>
+                        </div>
+                        {item.totalTarget && item.totalTarget > 0 && (
+                            <Badge variant={(item.nominalActual || 0) >= item.totalTarget ? "default" : "secondary"} className="text-[10px] h-5 px-1.5 mr-2">
                                 {Math.round(((item.nominalActual || 0) / item.totalTarget) * 100)}%
                             </Badge>
-                        ) : "-"}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="w-[50px] flex justify-end">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Aksi</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handleAddChild(item)}>
-                                    <Plus className="mr-2 h-4 w-4" /> Tambah Sub-Item
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleEdit(item)}>
-                                    <Edit className="mr-2 h-4 w-4" /> Edit Item
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handleDelete(item.id, item.nama)} className="text-red-600 focus:text-red-600">
-                                    <Trash2 className="mr-2 h-4 w-4" /> Hapus
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        )}
                     </div>
                 </div>
 
