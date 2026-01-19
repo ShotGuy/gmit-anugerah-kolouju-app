@@ -290,7 +290,21 @@ export const SidebarContent = () => {
             </button>
             {keuanganMasterOpen && (
               <div className="ml-4 mt-1 space-y-1 border-l pl-2">
-                {/* 1. Kategori Keuangan */}
+                {/* 1. Akun Kas (NEW) */}
+                <Link
+                  href="/master-data/akun-kas"
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
+                    pathname === "/master-data/akun-kas"
+                      ? "bg-muted text-primary"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  <Wallet className="h-4 w-4" />
+                  Akun Kas (Dompet)
+                </Link>
+
+                {/* 2. Kategori Keuangan */}
                 <Link
                   href="/master-data/kategori-keuangan"
                   className={cn(

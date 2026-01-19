@@ -270,10 +270,7 @@ export default function CreateItemTree({
         };
 
         // Prevent deleting last root?
-        if (items.length === 1 && items[0].id === targetId) {
-            toast.error("Minimal satu item harus tersedia");
-            return;
-        }
+
 
         if (confirm("Hapus item ini (dan sub-itemnya)?")) {
             setTreeItems(recursiveDelete(items));
@@ -434,10 +431,19 @@ export default function CreateItemTree({
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
+                                        <SelectItem value="Orang/Bulan (OB)">Orang/Bulan (OB)</SelectItem>
+                                        <SelectItem value="Tahun">Tahun</SelectItem>
                                         <SelectItem value="Bulan">Bulan</SelectItem>
                                         <SelectItem value="Minggu">Minggu</SelectItem>
-                                        <SelectItem value="Tahun">Tahun</SelectItem>
+                                        <SelectItem value="Hari">Hari</SelectItem>
                                         <SelectItem value="Kali">Kali</SelectItem>
+                                        <SelectItem value="Lembar">Lembar</SelectItem>
+                                        <SelectItem value="Liter">Liter</SelectItem>
+                                        <SelectItem value="Buah">Buah</SelectItem>
+                                        <SelectItem value="Orang">Orang</SelectItem>
+                                        <SelectItem value="KK">KK</SelectItem>
+                                        <SelectItem value="Paket">Paket</SelectItem>
+                                        <SelectItem value="Unit">Unit</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

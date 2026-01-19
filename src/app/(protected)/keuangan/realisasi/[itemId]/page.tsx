@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ArrowLeft, Edit, Trash2, TrendingUp, Calendar, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { DeleteRealisasiButton } from "@/components/keuangan/delete-realisasi-button";
 import { cn } from "@/lib/utils";
 
 // Helper formatter
@@ -135,6 +136,7 @@ export default async function RealisasiItemDetailPage({ params }: { params: Prom
                             <TableRow>
                                 <TableHead>Tanggal</TableHead>
                                 <TableHead>Keterangan</TableHead>
+                                <TableHead>Akun Kas</TableHead>
                                 <TableHead className="text-right">Jumlah</TableHead>
                                 <TableHead className="text-center">Aksi</TableHead>
                             </TableRow>
@@ -142,7 +144,7 @@ export default async function RealisasiItemDetailPage({ params }: { params: Prom
                         <TableBody>
                             {history.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                                         <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
                                         Belum ada data realisasi.
                                     </TableCell>
@@ -156,18 +158,24 @@ export default async function RealisasiItemDetailPage({ params }: { params: Prom
                                             })}
                                         </TableCell>
                                         <TableCell>{trx.keterangan || "-"}</TableCell>
+                                        <TableCell>
+                                            {trx.akunKas ? (
+                                                <Badge variant="outline">{trx.akunKas.nama}</Badge>
+                                            ) : (
+                                                <span className="text-muted-foreground">-</span>
+                                            )}
+                                        </TableCell>
                                         <TableCell className="text-right font-medium text-blue-600">
                                             {formatRupiah(Number(trx.totalRealisasi))}
                                         </TableCell>
                                         <TableCell className="text-center">
-                                            {/* TODO: Implement Delete Action via Server Action Form */}
                                             <div className="flex justify-center gap-1">
                                                 <Button variant="ghost" size="icon" asChild>
                                                     <Link href={`/keuangan/realisasi/edit/${trx.id}`}>
-                                                        <Edit className="h-4 w-4" />
+                                                        <Edit className="h-4 w-4 text-amber-600" />
                                                     </Link>
                                                 </Button>
-                                                {/* Placeholder for Delete - needs Client Component or Server Action form */}
+                                                <DeleteRealisasiButton id={trx.id} />
                                             </div>
                                         </TableCell>
                                     </TableRow>

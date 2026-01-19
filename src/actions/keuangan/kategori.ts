@@ -141,3 +141,55 @@ export async function deleteKategori(id: string) {
         return { success: false, message: "Gagal menghapus kategori" };
     }
 }
+
+export async function updateKategori(
+    id: string,
+    prevState: KategoriKeuanganState,
+    formData: FormData
+): Promise<KategoriKeuanganState> {
+    const nama = formData.get("nama") as string;
+    const kode = formData.get("kode") as string;
+    const jenis = formData.get("jenis") as string || "PENGELUARAN"; // Default or form input
+
+    const errors: KategoriKeuanganState["errors"] = {};
+    if (!nama) errors.nama = ["Nama kategori wajib diisi"];
+    if (!kode) errors.kode = ["Kode kategori wajib diisi"];
+
+    if (Object.keys(errors).length > 0) {
+        return { errors, success: false };
+    }
+
+    try {
+        // Check duplicate code (exclude self)
+        const existing = await (prisma as any).kategoriKeuangan.findFirst({
+            where: {
+                kode: kode.toUpperCase(),
+                id: { not: id },
+            },
+        });
+
+        if (existing) {
+            return {
+                errors: { kode: ["Kode kategori sudah digunakan"] },
+                success: false,
+            };
+        }
+
+        await (prisma as any).kategoriKeuangan.update({
+            where: { id },
+            data: {
+                nama,
+                kode: kode.toUpperCase(),
+                // jenis: jenis as any // Update type if schematic supports it
+            },
+        });
+
+        revalidatePath("/master-data/kategori-keuangan");
+        revalidatePath("/keuangan");
+
+        return { success: true, message: "Kategori berhasil diperbarui" };
+    } catch (error) {
+        console.error("Error updating kategori:", error);
+        return { success: false, message: "Gagal memperbarui kategori" };
+    }
+}

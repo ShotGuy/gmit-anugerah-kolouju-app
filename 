@@ -1,0 +1,29 @@
+[33mcommit 860e6f305849ebe98e82759ef5ef8dd4204118b3[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature/kas-keuangan[m[33m, [m[1;32mfeature/modul-keuangan[m[33m)[m
+Author: Rio Pellokila <akdohawu@gmail.com>
+Date:   Sun Jan 18 01:08:17 2026 +0800
+
+    Implementasi Modul Keuangan
+
+[33mcommit 365cbffea97e322c424719d0e11239e619bd847b[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m
+Author: Rio Pellokila <akdohawu@gmail.com>
+Date:   Sat Jan 17 03:26:09 2026 +0800
+
+    Rebranding Warna UI
+
+[33mcommit 03ec467fb37f621006c1c067b2e5dc05b26404dc[m
+Author: Rio Pellokila <akdohawu@gmail.com>
+Date:   Sat Jan 17 02:17:39 2026 +0800
+
+    Rebranding PWA
+
+[33mcommit 3b561876abbb032c3bb14795bc62611a6893b07e[m
+Author: Rio Pellokila <akdohawu@gmail.com>
+Date:   Sat Jan 17 02:03:45 2026 +0800
+
+    Rebranding sistem dari proyek sebelumnya
+
+[33mcommit c8c68e12001f15c4ba2b7402cc5219cbd123b487[m
+Author: Rio Pellokila <akdohawu@gmail.com>
+Date:   Sat Jan 17 01:50:21 2026 +0800
+
+    Initial Commit

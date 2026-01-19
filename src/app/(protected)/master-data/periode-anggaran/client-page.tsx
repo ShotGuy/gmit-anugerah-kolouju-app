@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { Plus, Calendar as CalendarIcon, Loader2, Search, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, Loader2, Search, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,24 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
     Form,
     FormControl,
     FormDescription,
@@ -34,7 +52,7 @@ import {
 } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createPeriode, PeriodeState } from "@/actions/keuangan/periode";
+import { createPeriode, updatePeriode, deletePeriode, PeriodeState } from "@/actions/keuangan/periode";
 import { Textarea } from "@/components/ui/textarea";
 
 interface Periode {
@@ -66,10 +84,26 @@ export default function PeriodeAnggaranClient({
 }: PeriodeAnggaranClientProps) {
     const [data, setData] = useState<Periode[]>(initialData);
     const [search, setSearch] = useState("");
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-    // Server Action Hook
-    const [state, formAction, isPending] = useActionState(createPeriode, initialState);
+    // UI States
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+    // Selection States
+    const [editingItem, setEditingItem] = useState<Periode | null>(null);
+    const [deletingItem, setDeletingItem] = useState<Periode | null>(null);
+
+    // --- Create / Update Action ---
+    // We wrap the action to handle both create and update based on `editingItem`
+    const submitAction = async (prevState: PeriodeState, formData: FormData): Promise<PeriodeState> => {
+        if (editingItem) {
+            return await updatePeriode(editingItem.id, prevState, formData);
+        } else {
+            return await createPeriode(prevState, formData);
+        }
+    };
+
+    const [state, formAction, isPending] = useActionState(submitAction, initialState);
 
     const form = useForm({
         defaultValues: {
@@ -85,15 +119,77 @@ export default function PeriodeAnggaranClient({
         setData(initialData);
     }, [initialData]);
 
+    // Handle Server Action Response
     useEffect(() => {
         if (state.success) {
             toast.success(state.message);
             setIsDialogOpen(false);
-            form.reset();
+            setEditingItem(null);
+            form.reset({
+                nama: "",
+                tahun: new Date().getFullYear(),
+                tanggalMulai: "",
+                tanggalAkhir: "",
+                keterangan: ""
+            });
         } else if (state.message) {
             toast.error(state.message);
         }
     }, [state, form]);
+
+    // Handle Edit Click
+    const handleEdit = (item: Periode) => {
+        setEditingItem(item);
+        form.reset({
+            nama: item.nama,
+            tahun: item.tahun,
+            // Format Date for Input Date (YYYY-MM-DD)
+            tanggalMulai: new Date(item.tanggalMulai).toISOString().split('T')[0],
+            tanggalAkhir: new Date(item.tanggalAkhir).toISOString().split('T')[0],
+            keterangan: item.keterangan || "",
+        });
+        setIsDialogOpen(true);
+    };
+
+    const handleCreate = () => {
+        setEditingItem(null);
+        form.reset({
+            nama: "",
+            tahun: new Date().getFullYear(),
+            tanggalMulai: "",
+            tanggalAkhir: "",
+            keterangan: ""
+        });
+        setIsDialogOpen(true);
+    };
+
+    // Handle Delete
+    const verifyDelete = (item: Periode) => {
+        setDeletingItem(item);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!deletingItem) return;
+
+        try {
+            const res = await deletePeriode(deletingItem.id);
+            if (res.success) {
+                toast.success(res.message);
+                setIsDeleteDialogOpen(false);
+                setDeletingItem(null);
+            } else {
+                toast.error(res.message);
+                // Keep dialog open if failed? Or close. 
+                // Close is better UX if error is "cannot delete" (user can't fix it right now anyway).
+                // Actually keep open so they see context but maybe not necessary.
+                setIsDeleteDialogOpen(false);
+            }
+        } catch (error) {
+            toast.error("Terjadi kesalahan saat menghapus");
+        }
+    };
+
 
     const filteredData = data.filter(
         (item) =>
@@ -118,7 +214,7 @@ export default function PeriodeAnggaranClient({
                         Atur Tahun Anggaran dan periode waktu pelaksanaan keuangan.
                     </p>
                 </div>
-                <Button onClick={() => setIsDialogOpen(true)} className="w-full md:w-auto">
+                <Button onClick={handleCreate} className="w-full md:w-auto">
                     <Plus className="mr-2 h-4 w-4" /> Buat Periode Baru
                 </Button>
             </div>
@@ -151,12 +247,13 @@ export default function PeriodeAnggaranClient({
                                     <TableHead>Rentang Waktu</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead className="text-center">Statistik</TableHead>
+                                    <TableHead className="w-[80px]"></TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {filteredData.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="h-24 text-center">
+                                        <TableCell colSpan={6} className="h-24 text-center">
                                             Tidak ada data periode.
                                         </TableCell>
                                     </TableRow>
@@ -186,6 +283,29 @@ export default function PeriodeAnggaranClient({
                                             <TableCell className="text-center">
                                                 <Badge variant="outline">{item._count?.itemKeuangan || 0} Item Anggaran</Badge>
                                             </TableCell>
+                                            <TableCell>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                                            <span className="sr-only">Open menu</span>
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                                                        <DropdownMenuItem onClick={() => handleEdit(item)}>
+                                                            <Pencil className="mr-2 h-4 w-4" /> Edit
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem
+                                                            onClick={() => verifyDelete(item)}
+                                                            className="text-destructive focus:text-destructive"
+                                                        >
+                                                            <Trash2 className="mr-2 h-4 w-4" /> Hapus
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
                                         </TableRow>
                                     ))
                                 )}
@@ -195,12 +315,15 @@ export default function PeriodeAnggaranClient({
                 </CardContent>
             </Card>
 
+            {/* CREATE / EDIT DIALOG */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="max-w-lg">
                     <DialogHeader>
-                        <DialogTitle>Buat Periode Anggaran</DialogTitle>
+                        <DialogTitle>{editingItem ? "Edit Periode" : "Buat Periode Baru"}</DialogTitle>
                         <DialogDescription>
-                            Tentukan periode baru untuk pencatatan keuangan.
+                            {editingItem
+                                ? "Ubah informasi periode anggaran yang sudah ada."
+                                : "Tentukan periode baru untuk pencatatan keuangan."}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -285,13 +408,42 @@ export default function PeriodeAnggaranClient({
                                 </Button>
                                 <Button type="submit" disabled={isPending}>
                                     {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Simpan Periode
+                                    Simpan
                                 </Button>
                             </DialogFooter>
                         </form>
                     </Form>
                 </DialogContent>
             </Dialog>
+
+            {/* DELETE ALERT DIALOG */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                            <AlertTriangle className="h-5 w-5" />
+                            Hapus Periode?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Apakah Anda yakin ingin menghapus periode <strong>{deletingItem?.nama}</strong>?
+                            <br /><br />
+                            Tindakan ini tidak dapat dibatalkan. Sistem akan memverifikasi bahwa periode ini tidak memiliki data terkait sebelum menghapus.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault(); // Prevent auto close to handle async
+                                confirmDelete();
+                            }}
+                            className="bg-destructive hover:bg-destructive/90"
+                        >
+                            Hapus
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

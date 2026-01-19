@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { Plus, Trash2, Tag, Loader2, Search } from "lucide-react";
+import { Plus, Trash2, Tag, Loader2, Search, MoreHorizontal, Pencil } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,8 +22,15 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
     Form,
     FormControl,
@@ -34,7 +41,7 @@ import {
 } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createKategori, deleteKategori, KategoriKeuanganState } from "@/actions/keuangan/kategori";
+import { createKategori, updateKategori, deleteKategori, KategoriKeuanganState } from "@/actions/keuangan/kategori";
 
 interface Kategori {
     id: string;
@@ -60,11 +67,24 @@ export default function KategoriKeuanganClient({
 }: KategoriKeuanganClientProps) {
     const [data, setData] = useState<Kategori[]>(initialData);
     const [search, setSearch] = useState("");
+
+    // UI States
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-    // Server Action Hook
-    const [state, formAction, isPending] = useActionState(createKategori, initialState);
+    // Selection States
+    const [editingItem, setEditingItem] = useState<Kategori | null>(null);
+
+    // --- Create / Update Action Wrapper ---
+    const submitAction = async (prevState: KategoriKeuanganState, formData: FormData): Promise<KategoriKeuanganState> => {
+        if (editingItem) {
+            return await updateKategori(editingItem.id, prevState, formData);
+        } else {
+            return await createKategori(prevState, formData);
+        }
+    };
+
+    const [state, formAction, isPending] = useActionState(submitAction, initialState);
 
     const form = useForm({
         defaultValues: {
@@ -81,11 +101,28 @@ export default function KategoriKeuanganClient({
         if (state.success) {
             toast.success(state.message);
             setIsDialogOpen(false);
-            form.reset();
+            setEditingItem(null);
+            form.reset({ nama: "", kode: "" });
         } else if (state.message) {
             toast.error(state.message);
         }
     }, [state, form]);
+
+    // Handle Edit
+    const handleEdit = (item: Kategori) => {
+        setEditingItem(item);
+        form.reset({
+            nama: item.nama,
+            kode: item.kode,
+        });
+        setIsDialogOpen(true);
+    };
+
+    const handleCreate = () => {
+        setEditingItem(null);
+        form.reset({ nama: "", kode: "" });
+        setIsDialogOpen(true);
+    };
 
     const handleDelete = async (id: string, nama: string) => {
         if (!confirm(`Hapus kategori "${nama}"?`)) return;
@@ -96,7 +133,6 @@ export default function KategoriKeuanganClient({
 
         if (result.success) {
             toast.success(result.message);
-            // Optimistic update handled by Next.js revalidatePath but we can also filter locally
             setData((prev) => prev.filter((item) => item.id !== id));
         } else {
             toast.error(result.message);
@@ -118,7 +154,7 @@ export default function KategoriKeuanganClient({
                         Kelola Master Data Kategori untuk Anggaran Gereja.
                     </p>
                 </div>
-                <Button onClick={() => setIsDialogOpen(true)} className="w-full md:w-auto">
+                <Button onClick={handleCreate} className="w-full md:w-auto">
                     <Plus className="mr-2 h-4 w-4" /> Tambah Kategori
                 </Button>
             </div>
@@ -149,7 +185,7 @@ export default function KategoriKeuanganClient({
                                     <TableHead className="w-[100px]">Kode</TableHead>
                                     <TableHead>Nama Kategori</TableHead>
                                     <TableHead className="text-center">Penggunaan di Anggaran</TableHead>
-                                    <TableHead className="text-right">Aksi</TableHead>
+                                    <TableHead className="w-[80px]"></TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -169,20 +205,34 @@ export default function KategoriKeuanganClient({
                                             <TableCell className="text-center">
                                                 {item._count?.itemKeuangan || 0} Item
                                             </TableCell>
-                                            <TableCell className="text-right">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-red-500 hover:bg-red-50 hover:text-red-600"
-                                                    onClick={() => handleDelete(item.id, item.nama)}
-                                                    disabled={isDeleting === item.id}
-                                                >
-                                                    {isDeleting === item.id ? (
-                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                    ) : (
-                                                        <Trash2 className="h-4 w-4" />
-                                                    )}
-                                                </Button>
+                                            <TableCell>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                                            <span className="sr-only">Open menu</span>
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                                                        <DropdownMenuItem onClick={() => handleEdit(item)}>
+                                                            <Pencil className="mr-2 h-4 w-4" /> Edit
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem
+                                                            onClick={() => handleDelete(item.id, item.nama)}
+                                                            className="text-destructive focus:text-destructive"
+                                                            disabled={isDeleting === item.id}
+                                                        >
+                                                            {isDeleting === item.id ? (
+                                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                            ) : (
+                                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                            )}
+                                                            Hapus
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </TableCell>
                                         </TableRow>
                                     ))
@@ -196,9 +246,9 @@ export default function KategoriKeuanganClient({
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Tambah Kategori Baru</DialogTitle>
+                        <DialogTitle>{editingItem ? "Edit Kategori" : "Tambah Kategori Baru"}</DialogTitle>
                         <DialogDescription>
-                            Buat kategori keuangan baru untuk pengelompokan anggaran.
+                            {editingItem ? "Ubah data kategori keuangan." : "Buat kategori keuangan baru untuk pengelompokan anggaran."}
                         </DialogDescription>
                     </DialogHeader>
 
