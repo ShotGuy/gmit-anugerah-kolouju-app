@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -8,13 +8,34 @@ import {
     Trash2,
     Save,
     ArrowLeft,
-    ChevronRight
+    ChevronRight,
+    GripVertical
 } from "lucide-react";
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragOverlay,
+    DragStartEvent,
+    DragMoveEvent,
+    DragEndEvent,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { SortableItemCard } from "./SortableItemCard";
 import {
     Select,
     SelectContent,
@@ -79,6 +100,49 @@ export default function CreateItemTree({
     const [items, setItems] = useState<ItemNode[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+
+    // --- DnD State ---
+    const [activeId, setActiveId] = useState<string | null>(null);
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 10 } }),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    );
+
+    // Flatten Tree for SortableContext
+    // Strategy: "Collapse while Dragging"
+    // If dragging a parent, hide its children from the flattened list.
+    const flattenedItems = useMemo(() => {
+        const flat: ItemNode[] = [];
+
+        // Helper to check if node is a child of the active item
+        const isChildOfActive = (node: ItemNode, activeId: string | null): boolean => {
+            if (!activeId) return false;
+            // We can check if parentId chain matches activeId.
+            // But simpler: In the traverse, if we encounter activeId, we skip adding its children.
+            return false; // Logic handled in traversal
+        };
+
+        const traverse = (nodes: ItemNode[], isHidden: boolean = false) => {
+            nodes.forEach(node => {
+                if (!isHidden) {
+                    flat.push(node);
+                }
+
+                // If this node is the one being dragged, hide its children
+                const shouldHideChildren = isHidden || (activeId !== null && node.id === activeId);
+
+                if (node.children.length > 0) {
+                    traverse(node.children, shouldHideChildren);
+                }
+            });
+        };
+
+        traverse(items);
+        return flat;
+    }, [items, activeId]);
+
+    const activeItem = useMemo(() => flattenedItems.find(i => i.id === activeId), [activeId, flattenedItems]);
 
     // --- Data Fetching ---
     useEffect(() => {
@@ -213,113 +277,203 @@ export default function CreateItemTree({
 
 
     // --- Actions ---
-    const handleAddChild = (parentId: string, level: number) => {
-        const recursiveAdd = (nodes: ItemNode[]): ItemNode[] => {
-            return nodes.map(node => {
-                if (node.id === parentId) {
-                    const newChild = createEmptynode(level + 1, node.children.length + 1, parentId);
-                    return { ...node, children: [...node.children, newChild] };
-                } else if (node.children.length > 0) {
-                    return { ...node, children: recursiveAdd(node.children) };
-                }
-                return node;
-            });
-        };
-        setTreeItems(recursiveAdd(items));
-    };
-
-    const handleAddSibling = (targetId: string, level: number, parentId: string | null) => {
-        if (level === 1) {
-            // Root sibling
-            const index = items.findIndex(i => i.id === targetId);
-            const newSibling = createEmptynode(1, items.length + 1, null);
-            const newItems = [...items];
-            newItems.splice(index + 1, 0, newSibling);
-            setTreeItems(newItems);
-        } else {
-            // Deep sibling
+    const handleAddChild = useCallback((parentId: string, level: number) => {
+        setItems(prevItems => {
             const recursiveAdd = (nodes: ItemNode[]): ItemNode[] => {
-                // Check if target is child of this level
-                // Actually need to find parent first
-                // Easier: traverse and look into children array
                 return nodes.map(node => {
-                    // If target is in my children
-                    const childIndex = node.children.findIndex(c => c.id === targetId);
-                    if (childIndex !== -1) {
-                        const newSibling = createEmptynode(level, node.children.length + 1, node.id);
-                        const newChildren = [...node.children];
-                        newChildren.splice(childIndex + 1, 0, newSibling);
-                        return { ...node, children: newChildren };
-                    }
-                    // Else recurse
-                    if (node.children.length > 0) {
+                    if (node.id === parentId) {
+                        const newChild = createEmptynode(level + 1, node.children.length + 1, parentId);
+                        return { ...node, children: [...node.children, newChild] };
+                    } else if (node.children.length > 0) {
                         return { ...node, children: recursiveAdd(node.children) };
                     }
                     return node;
                 });
             };
-            setTreeItems(recursiveAdd(items));
-        }
-    };
+            const codedItems = updateCodes(recursiveAdd(prevItems));
+            return codedItems;
+        });
+    }, []);
 
-    const handleDelete = (targetId: string) => {
-        const recursiveDelete = (nodes: ItemNode[]): ItemNode[] => {
-            return nodes
-                .filter(n => n.id !== targetId)
-                .map(n => ({ ...n, children: recursiveDelete(n.children) }));
-        };
-
-        // Prevent deleting last root?
-
-
-        if (confirm("Hapus item ini (dan sub-itemnya)?")) {
-            setTreeItems(recursiveDelete(items));
-        }
-    };
-
-    const handleUpdate = (targetId: string, field: keyof ItemNode, value: string) => {
-        // Recursive update
-        const updateNode = (nodes: ItemNode[]): ItemNode[] => {
-            return nodes.map(node => {
-                if (node.id === targetId) {
-                    const updated = { ...node, [field]: value };
-
-                    // Auto Calc Logic
-                    // If freq or nominal changed, update total
-                    if (field === 'targetFrekuensi' || field === 'nominalSatuan') {
-                        const freq = parseFloat(field === 'targetFrekuensi' ? value : node.targetFrekuensi);
-                        const nom = parseFloat(field === 'nominalSatuan' ? value : node.nominalSatuan);
-                        if (!isNaN(freq) && !isNaN(nom)) {
-                            updated.totalTarget = (freq * nom).toString();
+    const handleAddSibling = useCallback((targetId: string, level: number, parentId: string | null) => {
+        setItems(prevItems => {
+            let newItems = [...prevItems];
+            if (level === 1) {
+                // Root sibling
+                const index = newItems.findIndex(i => i.id === targetId);
+                const newSibling = createEmptynode(1, newItems.length + 1, null);
+                newItems.splice(index + 1, 0, newSibling);
+            } else {
+                // Deep sibling
+                const recursiveAdd = (nodes: ItemNode[]): ItemNode[] => {
+                    return nodes.map(node => {
+                        const childIndex = node.children.findIndex(c => c.id === targetId);
+                        if (childIndex !== -1) {
+                            const newSibling = createEmptynode(level, node.children.length + 1, node.id);
+                            const newChildren = [...node.children];
+                            newChildren.splice(childIndex + 1, 0, newSibling);
+                            return { ...node, children: newChildren };
                         }
+                        if (node.children.length > 0) {
+                            return { ...node, children: recursiveAdd(node.children) };
+                        }
+                        return node;
+                    });
+                };
+                newItems = recursiveAdd(newItems);
+            }
+            return updateCodes(newItems);
+        });
+    }, []);
+
+    const handleDelete = useCallback((targetId: string) => {
+        if (!confirm("Hapus item ini (dan sub-itemnya)?")) return;
+
+        setItems(prevItems => {
+            const recursiveDelete = (nodes: ItemNode[]): ItemNode[] => {
+                return nodes
+                    .filter(n => n.id !== targetId)
+                    .map(n => ({ ...n, children: recursiveDelete(n.children) }));
+            };
+            return updateCodes(recursiveDelete(prevItems));
+        });
+    }, []);
+
+    const handleUpdate = useCallback((targetId: string, field: keyof ItemNode, value: string) => {
+        setItems(prevItems => {
+            const updateNode = (nodes: ItemNode[]): ItemNode[] => {
+                return nodes.map(node => {
+                    if (node.id === targetId) {
+                        const updated = { ...node, [field]: value };
+                        if (field === 'targetFrekuensi' || field === 'nominalSatuan') {
+                            const freq = parseFloat(field === 'targetFrekuensi' ? value : node.targetFrekuensi);
+                            const nom = parseFloat(field === 'nominalSatuan' ? value : node.nominalSatuan);
+                            if (!isNaN(freq) && !isNaN(nom)) {
+                                updated.totalTarget = (freq * nom).toString();
+                            }
+                        }
+                        return updated;
                     }
-
-                    return updated;
-                }
-                if (node.children.length > 0) {
-                    // Recurse first
-                    const newChildren = updateNode(node.children);
-
-                    // Helper: Rollup Total Target from children
-                    // If I have children, my total target is sum of children
-                    const sumChildren = newChildren.reduce((acc, child) => {
-                        return acc + (parseFloat(child.totalTarget) || 0);
-                    }, 0);
-
-                    // Update self if children exist
-                    if (newChildren.length > 0) {
-                        // Only override if children actually have values? 
-                        // Logic from ref: "If has children, Total Target = Sum of Children's Total Target"
-                        return { ...node, children: newChildren, totalTarget: sumChildren.toString() };
+                    if (node.children.length > 0) {
+                        const newChildren = updateNode(node.children);
+                        const sumChildren = newChildren.reduce((acc, child) => {
+                            return acc + (parseFloat(child.totalTarget) || 0);
+                        }, 0);
+                        if (newChildren.length > 0) {
+                            return { ...node, children: newChildren, totalTarget: sumChildren.toString() };
+                        }
+                        return { ...node, children: newChildren };
                     }
+                    return node;
+                });
+            };
+            // Note: Update doesn't typically change structure, so updateCodes might be overkill but safe
+            // Optimization: Skip updateCodes if field is not structure-related?
+            return updateNode(prevItems);
+        });
+    }, []);
 
-                    return { ...node, children: newChildren };
-                }
-                return node;
-            });
+    // --- DnD Handlers ---
+    const handleDragStart = (event: DragStartEvent) => {
+        setActiveId(event.active.id as string);
+    };
+
+    const handleDragMove = (event: DragMoveEvent) => {
+        // No-op to avoid re-renders. Dnd-kit handles internal state.
+        // If we need visual indicators based on position, use event.delta in DragOverlay or CSS.
+    };
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        setActiveId(null);
+
+        if (!over) return;
+
+        const activeNode = flattenedItems.find(i => i.id === active.id);
+        const overNode = flattenedItems.find(i => i.id === over.id);
+
+        if (!activeNode || !overNode) return;
+
+        // Visual Depth Calculation
+        const projectedDepth = activeNode.level + Math.round(event.delta.x / 24);
+
+        // Construct new Flat List order
+        const oldIndex = flattenedItems.findIndex(i => i.id === active.id);
+        const newIndex = flattenedItems.findIndex(i => i.id === over.id);
+
+        let newFlatOrder = arrayMove(flattenedItems, oldIndex, newIndex);
+
+        // Reconstruct Tree
+        const newTree: ItemNode[] = [];
+        const stack: ItemNode[] = [];
+
+        // Helper to recursively update levels
+        const updateSubtreeLevels = (nodes: ItemNode[], delta: number): ItemNode[] => {
+            return nodes.map(node => ({
+                ...node,
+                level: node.level + delta,
+                children: updateSubtreeLevels(node.children, delta)
+            }));
         };
 
-        setItems(updateNode(items));
+        // Pre-process nodes: Wipe children for visible items, Keep children for collapsed dragged item
+        const processingNodes: ItemNode[] = newFlatOrder.map(n => {
+            if (n.id === active.id) {
+                // Keep children intact for the dragged item (subtree)
+                return { ...n };
+            }
+            // For others, wipe children to rebuild hierarchy from flat list order
+            return { ...n, children: [] };
+        });
+
+        for (let i = 0; i < processingNodes.length; i++) {
+            const item = processingNodes[i];
+            const prevItem = i > 0 ? processingNodes[i - 1] : null;
+
+            // Determine Target Depth
+            let depth = item.level;
+
+            if (item.id === active.id) {
+                const maxDepth = prevItem ? prevItem.level + 1 : 1;
+                const minDepth = 1;
+                depth = Math.max(minDepth, Math.min(projectedDepth, maxDepth));
+
+                // If level changed, we must shift the subtree
+                const delta = depth - item.level;
+                if (delta !== 0) {
+                    item.children = updateSubtreeLevels(item.children, delta);
+                }
+            } else {
+                const maxDepth = prevItem ? prevItem.level + 1 : 1;
+                if (depth > maxDepth) {
+                    depth = maxDepth;
+                }
+            }
+
+            // Assign valid depth
+            item.level = depth;
+            item.parentId = null;
+
+            // Stack management
+            while (stack.length >= depth) {
+                stack.pop();
+            }
+
+            // Parent is now at stack top
+            const parent = stack.length > 0 ? stack[stack.length - 1] : null;
+
+            if (parent) {
+                parent.children.push(item);
+                item.parentId = parent.id;
+            } else {
+                newTree.push(item);
+                item.parentId = null;
+            }
+
+            stack.push(item);
+        }
+
+        setTreeItems(newTree);
     };
 
 
@@ -361,130 +515,7 @@ export default function CreateItemTree({
     };
 
 
-    // --- Render ---
-    const renderNode = (node: ItemNode) => {
-        const hasChildren = node.children.length > 0;
 
-        return (
-            <div key={node.id} className="space-y-4">
-                <Card className="relative border-l-4 border-l-blue-500/20 data-[level=1]:border-l-blue-500">
-                    <CardHeader className="p-4 pb-2 bg-muted/20">
-                        <div className="flex flex-col md:flex-row justify-between md:items-center gap-3">
-                            <div className="flex items-center gap-3">
-                                <Badge variant="outline" className="font-mono text-xs px-2 py-1">
-                                    {node.kode || "?"}
-                                </Badge>
-                                <span className="text-xs text-muted-foreground mr-auto md:mr-0">Level {node.level} • Urutan: {node.urutan}</span>
-                            </div>
-
-                            <div className="flex items-center gap-2 flex-wrap justify-end">
-                                <Button variant="outline" size="sm" onClick={() => handleAddChild(node.id, node.level)}>
-                                    <Plus className="h-3.5 w-3.5 mr-1.5" /> Sub Item
-                                </Button>
-                                <Button variant="outline" size="sm" onClick={() => handleAddSibling(node.id, node.level, node.parentId)}>
-                                    <Plus className="h-3.5 w-3.5 mr-1.5" /> Sibling
-                                </Button>
-                                <Button variant="ghost" size="sm" onClick={() => handleDelete(node.id)} className="text-red-500 hover:text-red-600 hover:bg-red-50">
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="md:col-span-2">
-                            <label className="text-xs font-medium text-muted-foreground mb-1 block">Nama Item</label>
-                            <Input
-                                value={node.nama}
-                                onChange={(e) => handleUpdate(node.id, 'nama', e.target.value)}
-                                placeholder="Contoh: Persembahan Syukur"
-                                className="h-9"
-                            />
-                        </div>
-
-                        <div className="md:col-span-2">
-                            <label className="text-xs font-medium text-muted-foreground mb-1 block">Deskripsi</label>
-                            <Input
-                                value={node.deskripsi}
-                                onChange={(e) => handleUpdate(node.id, 'deskripsi', e.target.value)}
-                                placeholder="Deskripsi optional..."
-                                className="h-9"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="text-xs font-medium text-muted-foreground mb-1 block">Target (Frekuensi)</label>
-                            <div className="flex gap-2">
-                                <Input
-                                    className="w-20 h-9"
-                                    type="number"
-                                    placeholder="12"
-                                    value={node.targetFrekuensi}
-                                    onChange={(e) => handleUpdate(node.id, 'targetFrekuensi', e.target.value)}
-                                    disabled={hasChildren}
-                                />
-                                <Select
-                                    value={node.satuanFrekuensi}
-                                    onValueChange={(val) => handleUpdate(node.id, 'satuanFrekuensi', val)}
-                                    disabled={hasChildren}
-                                >
-                                    <SelectTrigger className="flex-1 h-9">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Orang/Bulan (OB)">Orang/Bulan (OB)</SelectItem>
-                                        <SelectItem value="Tahun">Tahun</SelectItem>
-                                        <SelectItem value="Bulan">Bulan</SelectItem>
-                                        <SelectItem value="Minggu">Minggu</SelectItem>
-                                        <SelectItem value="Hari">Hari</SelectItem>
-                                        <SelectItem value="Kali">Kali</SelectItem>
-                                        <SelectItem value="Lembar">Lembar</SelectItem>
-                                        <SelectItem value="Liter">Liter</SelectItem>
-                                        <SelectItem value="Buah">Buah</SelectItem>
-                                        <SelectItem value="Orang">Orang</SelectItem>
-                                        <SelectItem value="KK">KK</SelectItem>
-                                        <SelectItem value="Paket">Paket</SelectItem>
-                                        <SelectItem value="Unit">Unit</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="text-xs font-medium text-muted-foreground mb-1 block">Nominal Satuan</label>
-                            <div className="relative">
-                                <span className="absolute left-3 top-2.5 text-xs text-muted-foreground">Rp</span>
-                                <Input
-                                    className="pl-8 h-9"
-                                    type="number"
-                                    placeholder="0"
-                                    value={node.nominalSatuan}
-                                    onChange={(e) => handleUpdate(node.id, 'nominalSatuan', e.target.value)}
-                                    disabled={hasChildren}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="md:col-span-2 lg:col-span-2 bg-muted/30 p-2 rounded border border-dashed text-right flex justify-between items-center px-4">
-                            <div className="text-left">
-                                <span className="text-xs font-medium text-muted-foreground block">Total Target Anggaran</span>
-                                {hasChildren && <span className="text-[10px] text-blue-500 font-medium">(Otomatis dari sub-item)</span>}
-                            </div>
-                            <span className="font-mono font-bold text-lg">
-                                Rp {parseFloat(node.totalTarget || "0").toLocaleString('id-ID')}
-                            </span>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Children Recursion */}
-                {hasChildren && (
-                    <div className="pl-4 md:pl-8 space-y-4 border-l-2 border-dashed border-muted ml-2 md:ml-4">
-                        {node.children.map(child => renderNode(child))}
-                    </div>
-                )}
-            </div>
-        );
-    };
 
 
     return (
@@ -574,7 +605,41 @@ export default function CreateItemTree({
                                 </div>
                             ) : (
                                 <div className="space-y-6">
-                                    {items.map(node => renderNode(node))}
+                                    <DndContext
+                                        sensors={sensors}
+                                        collisionDetection={closestCenter}
+                                        onDragStart={handleDragStart}
+                                        onDragMove={handleDragMove}
+                                        onDragEnd={handleDragEnd}
+                                    >
+                                        <SortableContext
+                                            items={flattenedItems.map(i => i.id)}
+                                            strategy={verticalListSortingStrategy}
+                                        >
+                                            {flattenedItems.map(node => (
+                                                <SortableItemCard
+                                                    key={node.id}
+                                                    node={node}
+                                                    handleAddChild={handleAddChild}
+                                                    handleAddSibling={handleAddSibling}
+                                                    handleDelete={handleDelete}
+                                                    handleUpdate={handleUpdate}
+                                                />
+                                            ))}
+                                        </SortableContext>
+                                        <DragOverlay>
+                                            {activeId && activeItem ? (
+                                                <SortableItemCard
+                                                    node={activeItem}
+                                                    isOverlay
+                                                    handleAddChild={() => { }}
+                                                    handleAddSibling={() => { }}
+                                                    handleDelete={() => { }}
+                                                    handleUpdate={() => { }}
+                                                />
+                                            ) : null}
+                                        </DragOverlay>
+                                    </DndContext>
 
                                     {items.length === 0 && (
                                         <div className="text-center py-12 border-2 border-dashed rounded-lg bg-background/50">

@@ -95,11 +95,6 @@ export default function BudgetTreeClient({
     const fetchData = async () => {
         if (!selectedPeriode) return;
         setIsLoading(true);
-        // We fetch all items for the period (and optionally category from server if we wanted to optimization, 
-        // but user asked for client side filtering feel effectively). 
-        // Let's keep fetching based on selectedKategori if it's "all" or specific to minimize data if needed,
-        // but for "search" we usually need full tree to filter.
-        // For now, let's pull all items for the period to allow smooth client-side filtering.
         const res = await getItemsTree(selectedPeriode, selectedKategori === "all" ? undefined : selectedKategori);
         if (res.success && res.data) {
             setItems(res.data);
@@ -146,50 +141,25 @@ export default function BudgetTreeClient({
 
     // Build Hierarchy
     const treeData = useMemo(() => {
-        // If searching or filtering level, we might break the tree structure.
-        // If specific filters are active, we might want to show flat list or maintain tree path.
-        // Usually simpler to show flat list when searching, or keep tree if possible.
-        // Let's stick to Tree structure, but if a child matches and parent doesn't ?? 
-        // For now, let's rebuild tree from filtered items. This works best if we filter "Keep parents of matched children".
-        // But for simple "Level" filter, it's just that level.
-
-        // If strict filtering is applied (SearchResults), standard tree might look broken. 
-        // Let's try to Map all items first.
-
         const map = new Map<string, ItemKeuangan & { children: ItemKeuangan[] }>();
         const roots: (ItemKeuangan & { children: ItemKeuangan[] })[] = [];
 
-        // Note: filteredItems contains the items that matched. 
-        // Constructing a tree from ONLY matched items might isolate children from parents.
-        // Ideally: If searching, show the matched item. If it has parent, show parent (expanded)?
-        // For simplicity in this iteration: Just build tree from filteredItems. 
-        // *Improvement*: When searching, maybe just show flat table? User asked for filters.
-
-        // Let's use the full 'items' for tree construction IF no search/level filter is active
-        // But if filters are active, maybe just flat list? 
-        // The prompt says "filter by level". If I filter level 1, I only see roots. If level 2, only existing children.
-        // Let's support that (Flat view effectively if filtering strictly).
-
         const sourceData = (searchQuery || filterLevel !== "all") ? filteredItems : items;
-        const isFiltering = searchQuery !== "" || filterLevel !== "all";
 
         sourceData.forEach((item) => {
             map.set(item.id, { ...item, children: [] });
         });
 
         sourceData.forEach((item) => {
-            // Only attach to parent IF parent is also in the sourceData (filtered)
             if (item.parentId && map.has(item.parentId)) {
                 map.get(item.parentId)!.children.push(map.get(item.id)!);
             } else {
-                // If parent not found (e.g. filtered out), treat as root for display
                 roots.push(map.get(item.id)!);
             }
         });
 
         return roots;
     }, [items, filteredItems, searchQuery, filterLevel]);
-
 
     // --- Handlers ---
     const handleAddRoot = () => {
@@ -209,7 +179,6 @@ export default function BudgetTreeClient({
     const handleDelete = async (id: string, nama: string) => {
         if (!confirm(`Hapus item "${nama}"?`)) return;
 
-        // Optimistic Update
         const oldItems = [...items];
         setItems((prev) => prev.filter(i => i.id !== id));
 
@@ -217,7 +186,7 @@ export default function BudgetTreeClient({
         if (res.success) {
             toast.success(res.message);
         } else {
-            setItems(oldItems); // Revert
+            setItems(oldItems);
             toast.error(res.message || "Gagal menghapus");
         }
     };
@@ -227,18 +196,17 @@ export default function BudgetTreeClient({
     };
 
     // --- Render Row ---
-    const renderRow = (item: ItemKeuangan & { children: ItemKeuangan[] }, level: number) => {
+    const renderRow = (item: ItemKeuangan, level: number) => {
         const hasChildren = item.children && item.children.length > 0;
         const isExpanded = expandedNodes.has(item.id);
-        const indentLevel = (searchQuery || filterLevel !== "all") ? 0 : level;
-        const paddingLeft = indentLevel * 24 + 16; // Maintain indentation logic
+        const paddingLeft = level * 24 + 16;
 
         return (
             <div key={item.id}>
                 <div className={`
-          flex flex-col border-b border-border/50 hover:bg-muted/50 transition-colors py-2 pr-4
-          ${(level === 0 && !searchQuery) ? "bg-muted/10" : ""}
-        `}>
+                    flex flex-col border-b border-border/50 hover:bg-muted/50 transition-colors py-2 pr-4
+                    ${(level === 0 && !searchQuery) ? "bg-muted/10" : ""}
+                `}>
                     <div className="flex items-center">
                         {/* Tree Control & Name */}
                         <div className="flex-1 flex items-center min-w-0" style={{ paddingLeft }}>
@@ -324,7 +292,7 @@ export default function BudgetTreeClient({
 
                 {/* Render Children */}
                 {(isExpanded || searchQuery || filterLevel !== "all") && item.children && item.children.length > 0 &&
-                    item.children.map(child => renderRow({ ...child, children: child.children || [] }, level + 1))
+                    item.children.map(child => renderRow(child, level + 1))
                 }
             </div>
         );
@@ -374,7 +342,7 @@ export default function BudgetTreeClient({
                         <SelectContent>
                             <SelectItem value="all">Semua Kategori</SelectItem>
                             {initialKategoris.map(k => (
-                                <SelectItem key={k.id} value={k.id}>{k.nama}</SelectItem>
+                                <SelectItem key={k.id} value={k.id}>{k.nama} ({k.kode})</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>

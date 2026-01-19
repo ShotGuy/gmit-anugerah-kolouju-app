@@ -307,3 +307,150 @@ export async function deleteItemKeuangan(id: string) {
         return { success: false, message: "Gagal menghapus item anggaran" };
     }
 }
+
+// --- DRAG AND DROP REORDER LOGIC ---
+
+export async function reorderItemKeuangan(
+    itemId: string,
+    newParentId: string | null,
+    newIndex: number
+) {
+    try {
+        const item = await prisma.itemKeuangan.findUnique({
+            where: { id: itemId },
+        });
+
+        if (!item) return { success: false, message: "Item tidak ditemukan" };
+
+        const { periodeId, kategoriId } = item;
+
+        // Verify new parent if exists
+        if (newParentId) {
+            const parent = await prisma.itemKeuangan.findUnique({
+                where: { id: newParentId },
+            });
+            if (!parent) return { success: false, message: "Parent tidak ditemukan" };
+            if (parent.kategoriId !== kategoriId) {
+                return { success: false, message: "Tidak dapat memindahkan item ke kategori lain" };
+            }
+        }
+
+        // Transaction for safety
+        await prisma.$transaction(async (tx: any) => {
+            // 1. Fetch ALL items for this Category & Period
+            const allItems = await tx.itemKeuangan.findMany({
+                where: { periodeId, kategoriId, isActive: true },
+                orderBy: { urutan: "asc" },
+                include: { kategori: true }
+            });
+
+            // 2. Build In-Memory Tree
+            const itemMap = new Map<string, any>();
+            const roots: any[] = [];
+
+            // Initialize with children array
+            const nodes = allItems.map((i: any) => ({ ...i, children: [] }));
+            nodes.forEach((n: any) => itemMap.set(n.id, n));
+
+            // Link children
+            nodes.forEach((n: any) => {
+                if (n.parentId && itemMap.has(n.parentId)) {
+                    itemMap.get(n.parentId).children.push(n);
+                } else if (!n.parentId) {
+                    roots.push(n);
+                }
+            });
+
+            // Sort children by current 'urutan'
+            const sortNodes = (list: any[]) => list.sort((a, b) => a.urutan - b.urutan);
+            sortNodes(roots);
+            nodes.forEach((n: any) => sortNodes(n.children));
+
+            // 3. Move Logic
+            const targetNode = itemMap.get(itemId);
+            if (!targetNode) throw new Error("Target node lost during processing");
+
+            // Remove from old location
+            const oldParentId = targetNode.parentId;
+            if (oldParentId && itemMap.has(oldParentId)) {
+                const oldParent = itemMap.get(oldParentId);
+                const idx = oldParent.children.findIndex((c: any) => c.id === itemId);
+                if (idx !== -1) oldParent.children.splice(idx, 1);
+            } else {
+                const idx = roots.findIndex(r => r.id === itemId);
+                if (idx !== -1) roots.splice(idx, 1);
+            }
+
+            // Insert to new location
+            targetNode.parentId = newParentId;
+
+            if (newParentId && itemMap.has(newParentId)) {
+                const newParent = itemMap.get(newParentId);
+                const safeIndex = Math.min(newIndex, newParent.children.length);
+                newParent.children.splice(safeIndex, 0, targetNode);
+            } else {
+                const safeIndex = Math.min(newIndex, roots.length);
+                roots.splice(safeIndex, 0, targetNode);
+            }
+
+            // 4. Recalculate & Collect Updates
+            const updates: any[] = [];
+
+            const traverse = (nodeList: any[], level: number, parentCode: string | null, parentId: string | null) => {
+                nodeList.forEach((node, idx) => {
+                    const urutan = idx + 1;
+
+                    // Generate new Code
+                    let newKode = "";
+                    if (level === 1) {
+                        const catCode = node.kategori?.kode || "UNK";
+                        newKode = `${catCode}.${urutan}`;
+                    } else {
+                        newKode = `${parentCode}.${urutan}`;
+                    }
+
+                    if (
+                        node.urutan !== urutan ||
+                        node.kode !== newKode ||
+                        node.parentId !== parentId ||
+                        node.level !== level
+                    ) {
+                        updates.push({
+                            id: node.id,
+                            urutan,
+                            kode: newKode,
+                            parentId,
+                            level
+                        });
+                    }
+
+                    if (node.children.length > 0) {
+                        traverse(node.children, level + 1, newKode, node.id);
+                    }
+                });
+            };
+
+            traverse(roots, 1, null, null);
+
+            // 5. Execute Updates
+            for (const update of updates) {
+                await tx.itemKeuangan.update({
+                    where: { id: update.id },
+                    data: {
+                        urutan: update.urutan,
+                        kode: update.kode,
+                        parentId: update.parentId,
+                        level: update.level
+                    }
+                });
+            }
+        });
+
+        revalidatePath("/keuangan");
+        return { success: true, message: "Urutan item berhasil diperbarui" };
+
+    } catch (error) {
+        console.error("Error reordering:", error);
+        return { success: false, message: "Gagal memperbarui urutan item" };
+    }
+}
