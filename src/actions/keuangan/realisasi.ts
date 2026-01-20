@@ -372,45 +372,99 @@ export async function getRealisasiSummary({
     itemKeuanganId?: string;
 }) {
     try {
-        // 1. Build Filter
-        const whereItem: any = { isActive: true };
+        // 1. Build Filter for ITEMS
+        // Remove isActive filter to ensure we calculate EVERYTHING that exists
+        const whereItem: any = {};
         if (periodeId) whereItem.periodeId = periodeId;
         if (kategoriId) whereItem.kategoriId = kategoriId;
         if (itemKeuanganId) whereItem.id = itemKeuanganId;
 
-        // 2. Fetch Items with their stats
-        // 2. Fetch Items with their stats
-        // Note: ItemKeuangan has 'nominalActual' cached, which makes this fast.
+        // 2. Fetch Items
+        // Order by LEVEL desc so we process deepest children first (for rollup)
         const items = await (prisma as any).itemKeuangan.findMany({
             where: whereItem,
-            orderBy: { kode: "asc" },
+            orderBy: [
+                { level: 'desc' }, // Process children before parents
+                { kode: 'asc' }
+            ],
+            include: { kategori: true }
         });
 
-        // 3. Calculate Summary
+        // 3. Fetch ACTUAL Realization Data via Aggregation (Group By)
+        const whereRealisasi: any = {};
+        if (periodeId) whereRealisasi.periodeId = periodeId;
+
+        const realisasiAggregations = await (prisma as any).realisasiItemKeuangan.groupBy({
+            by: ['itemKeuanganId'],
+            where: whereRealisasi,
+            _sum: {
+                totalRealisasi: true
+            }
+        });
+
+        // Create a Map with INITIAL values (Direct Realization)
+        // Structure: ItemID -> { target, realisasi }
+        // We will mutate this map during Rollup
+        const statsMap = new Map<string, { target: number, realisasi: number, parentId: string | null }>();
+
+        // Initialize Map
+        items.forEach((item: any) => {
+            // Find direct realization for this item
+            const agg = realisasiAggregations.find((a: any) => a.itemKeuanganId === item.id);
+            const directRealisasi = agg ? Number(agg._sum.totalRealisasi) : 0;
+            const directTarget = Number(item.totalTarget) || 0;
+
+            statsMap.set(item.id, {
+                target: directTarget,
+                realisasi: directRealisasi,
+                parentId: item.parentId
+            });
+        });
+
+        // 4. PERFORM HIERARCHY ROLLUP (Bottom-Up)
+        // Since 'items' is sorted by level DESC, we are guaranteed to process children before parents.
+        items.forEach((item: any) => {
+            if (item.parentId && statsMap.has(item.parentId)) {
+                const myStats = statsMap.get(item.id);
+                const parentStats = statsMap.get(item.parentId);
+
+                if (myStats && parentStats) {
+                    parentStats.target += myStats.target;
+                    parentStats.realisasi += myStats.realisasi;
+                    // Note: We modifying the object reference in the Map, so it updates validly.
+                }
+            }
+        });
+
+        // 5. Calculate Final Summary (e.g. Total of Root Items)
         let totalTargetAmount = 0;
         let totalRealisasiAmount = 0;
         let totalItems = 0;
         let itemsTargetAchieved = 0;
 
-        const summaryItems = items.map((item: any) => {
-            const target = Number(item.totalTarget) || 0;
-            const realisasi = Number(item.nominalActual) || 0;
-            const variance = realisasi - target; // Positive means surplus/achieved if Income, check logic context later.
-            // For now assuming:
-            // If Kategori is TYPE_INCOME (Penerimaan): Realisasi >= Target is Good.
-            // If Kategori is TYPE_EXPENSE (Pengeluaran): Realisasi <= Target is Good.
-            // But usually 'Target Tercapai' means Realisasi >= Target for income.
-            // Let's stick to generic: Achieved if realisasi >= target.
+        // Note: For total summary, we should only sum ROOT items (level 1) to avoid double counting
+        // OR, simply sum the final values of level 1 items.
 
+        // Map back to array format
+        const summaryItems = items.map((item: any) => {
+            const stats = statsMap.get(item.id) || { target: 0, realisasi: 0 };
+            const target = stats.target;
+            const realisasi = stats.realisasi;
+
+            const variance = realisasi - target;
             const percentage = target === 0 ? (realisasi > 0 ? 100 : 0) : (realisasi / target) * 100;
             const isAchieved = percentage >= 100;
 
-            totalTargetAmount += target;
-            totalRealisasiAmount += realisasi;
-            totalItems++;
+            // Only add to GLOBAL Totals if it's a Root item (or filtered root) 
+            // to prevent double counting in the Big Summary Card
+            if (!item.parentId || item.level === 1) {
+                totalTargetAmount += target;
+                totalRealisasiAmount += realisasi;
+            }
+
+            totalItems++; // This is count of all nodes
             if (isAchieved) itemsTargetAchieved++;
 
-            // Serialize Prisma Decimals to prevent Client Component errors
             return {
                 id: item.id,
                 kategoriId: item.kategoriId,
@@ -430,7 +484,6 @@ export async function getRealisasiSummary({
                 varianceAmount: variance,
                 achievementPercentage: percentage,
                 isTargetAchieved: isAchieved,
-                // Relation counts if needed (none for now in this view)
                 isActive: item.isActive,
                 createdAt: item.createdAt.toISOString(),
                 updatedAt: item.updatedAt.toISOString(),
@@ -491,5 +544,38 @@ export async function getRealisasiByItem(itemKeuanganId: string) {
     } catch (error) {
         console.error("Get Realisasi By Item Error:", error);
         return { success: false, data: [] };
+    }
+}
+
+export async function recalculateItemStats() {
+    try {
+        // 1. Reset all nominalActual to 0
+        await prisma.itemKeuangan.updateMany({
+            data: { nominalActual: 0, jumlahTransaksi: 0 }
+        });
+
+        // 2. Aggregate from Realisasi
+        const aggregations = await prisma.realisasiItemKeuangan.groupBy({
+            by: ['itemKeuanganId'],
+            _sum: { totalRealisasi: true },
+            _count: { id: true }
+        });
+
+        // 3. Update each item
+        for (const agg of aggregations) {
+            if (agg.itemKeuanganId) {
+                await prisma.itemKeuangan.update({
+                    where: { id: agg.itemKeuanganId },
+                    data: {
+                        nominalActual: agg._sum.totalRealisasi || 0,
+                        jumlahTransaksi: agg._count.id || 0
+                    }
+                });
+            }
+        }
+        return { success: true, message: "Sinkronisasi data berhasil" };
+    } catch (e) {
+        console.error(e);
+        return { success: false, message: "Gagal sinkronisasi" };
     }
 }

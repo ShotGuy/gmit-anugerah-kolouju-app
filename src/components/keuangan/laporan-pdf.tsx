@@ -121,8 +121,8 @@ export const LaporanPdf = ({ data, akunNama, signatories }: LaporanPdfProps) => 
                 <View style={styles.header}>
                     <Text>GEREJA MASEHI INJILI DI TIMOR</Text>
                     <Text>JEMAAT ANUGERAH KOLUJU</Text>
-                    <Text style={styles.headerTitle}>BUKU KAS UMUM</Text>
-                    <Text style={{ marginTop: 4 }}>BULAN {data.periodeLabel.toUpperCase()}</Text>
+                    <Text style={styles.headerTitle}>LAPORAN {akunNama.toUpperCase()}</Text>
+                    <Text style={{ marginTop: 4 }}>PERIODE {data.periodeLabel.toUpperCase()}</Text>
                 </View>
 
                 {/* Info */}
@@ -145,7 +145,7 @@ export const LaporanPdf = ({ data, akunNama, signatories }: LaporanPdfProps) => 
                     {/* Saldo Awal */}
                     <View style={styles.tableRow}>
                         <View style={[styles.tableCol, styles.colTgl]}><Text>-</Text></View>
-                        <View style={[styles.tableCol, styles.colUraian]}><Text style={{ fontStyle: 'italic' }}>Saldo Bulan Lalu</Text></View>
+                        <View style={[styles.tableCol, styles.colUraian]}><Text style={{ fontStyle: 'italic' }}>Saldo Periode Lalu</Text></View>
                         <View style={[styles.tableCol, styles.colNoBukti]}><Text></Text></View>
                         <View style={[styles.tableCol, styles.colNominal]}><Text></Text></View>
                         <View style={[styles.tableCol, styles.colNominal]}><Text></Text></View>
@@ -192,19 +192,19 @@ export const LaporanPdf = ({ data, akunNama, signatories }: LaporanPdfProps) => 
                     <Text style={{ marginBottom: 4 }}>Pada hari ini {signatories.tanggal} Buku kas {akunNama} ini ditutup dengan rincian sbb:</Text>
                     <View style={styles.summaryTable}>
                         <View style={styles.summaryRow}>
-                            <Text>a. Saldo Bulan Lalu</Text>
+                            <Text>a. Saldo Periode Lalu</Text>
                             <Text>Rp. {formatCurrency(data.saldoAwal).replace("Rp", "").trim()}</Text>
                         </View>
                         <View style={styles.summaryRow}>
-                            <Text>b. Penerimaan Bulan ini</Text>
+                            <Text>b. Penerimaan Periode ini</Text>
                             <Text>Rp. {formatCurrency(data.totalDebet).replace("Rp", "").trim()}</Text>
                         </View>
                         <View style={styles.summaryRow}>
-                            <Text>c. Pengeluaran Bulan ini</Text>
+                            <Text>c. Pengeluaran Periode ini</Text>
                             <Text>Rp. {formatCurrency(data.totalKredit).replace("Rp", "").trim()}</Text>
                         </View>
                         <View style={[styles.summaryRow, { borderTopWidth: 1, borderTopColor: '#000', paddingTop: 2 }]}>
-                            <Text style={styles.bold}>d. Saldo Kas Bulan ini</Text>
+                            <Text style={styles.bold}>d. Saldo Kas Periode ini</Text>
                             <Text style={styles.bold}>Rp. {formatCurrency(data.saldoAkhir).replace("Rp", "").trim()}</Text>
                         </View>
                     </View>

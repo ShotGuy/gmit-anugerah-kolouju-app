@@ -5,6 +5,8 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Plus, Calendar as CalendarIcon, Loader2, Search, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, AlertTriangle } from "lucide-react";
 
+import { Switch } from "@/components/ui/switch";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -112,6 +114,7 @@ export default function PeriodeAnggaranClient({
             tanggalMulai: "",
             tanggalAkhir: "",
             keterangan: "",
+            isActive: true,
         },
     });
 
@@ -130,7 +133,8 @@ export default function PeriodeAnggaranClient({
                 tahun: new Date().getFullYear(),
                 tanggalMulai: "",
                 tanggalAkhir: "",
-                keterangan: ""
+                keterangan: "",
+                isActive: true
             });
         } else if (state.message) {
             toast.error(state.message);
@@ -147,6 +151,7 @@ export default function PeriodeAnggaranClient({
             tanggalMulai: new Date(item.tanggalMulai).toISOString().split('T')[0],
             tanggalAkhir: new Date(item.tanggalAkhir).toISOString().split('T')[0],
             keterangan: item.keterangan || "",
+            isActive: item.isActive,
         });
         setIsDialogOpen(true);
     };
@@ -158,7 +163,8 @@ export default function PeriodeAnggaranClient({
             tahun: new Date().getFullYear(),
             tanggalMulai: "",
             tanggalAkhir: "",
-            keterangan: ""
+            keterangan: "",
+            isActive: true
         });
         setIsDialogOpen(true);
     };
@@ -457,6 +463,28 @@ export default function PeriodeAnggaranClient({
                                         <FormControl>
                                             <Textarea placeholder="Catatan tambahan..." {...field} name="keterangan" />
                                         </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="isActive"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                        <div className="space-y-0.5">
+                                            <FormLabel>Status Aktif</FormLabel>
+                                            <FormDescription>
+                                                Periode aktif akan muncul di pilihan default.
+                                            </FormDescription>
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                        {/* Hidden input to ensure value is passed in FormData */}
+                                        <input type="hidden" name="isActive" value={String(field.value)} />
                                     </FormItem>
                                 )}
                             />

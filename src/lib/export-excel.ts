@@ -35,12 +35,12 @@ export const generateExcelReport = async (
     worksheet.mergeCells('A3:F3'); // Empty row
 
     worksheet.mergeCells('A4:F4');
-    worksheet.getCell('A4').value = 'BUKU KAS UMUM';
+    worksheet.getCell('A4').value = `LAPORAN ${akunNama.toUpperCase()}`;
     worksheet.getCell('A4').font = titleFont;
     worksheet.getCell('A4').alignment = { horizontal: 'center' };
 
     worksheet.mergeCells('A5:F5');
-    worksheet.getCell('A5').value = `BULAN ${data.periodeLabel.toUpperCase()}`;
+    worksheet.getCell('A5').value = `PERIODE ${data.periodeLabel.toUpperCase()}`;
     worksheet.getCell('A5').alignment = { horizontal: 'center' };
     worksheet.getCell('A5').font = { bold: true };
 
@@ -73,7 +73,7 @@ export const generateExcelReport = async (
 
     // Saldo Awal Row
     const startRow = worksheet.getRow(rowIdx);
-    startRow.values = ['-', 'Saldo Bulan Lalu', '', null, null, data.saldoAwal];
+    startRow.values = ['-', 'Saldo Periode Lalu', '', null, null, data.saldoAwal];
     startRow.eachCell((cell, colNumber) => {
         cell.border = borderStyle;
         if (colNumber >= 4) cell.numFmt = '#,##0'; // Number format
@@ -140,10 +140,10 @@ export const generateExcelReport = async (
         rowIdx++;
     };
 
-    addSummaryRow('a. Saldo Bulan Lalu', data.saldoAwal);
-    addSummaryRow('b. Penerimaan Bulan Ini', data.totalDebet);
-    addSummaryRow('c. Pengeluaran Bulan Ini', data.totalKredit);
-    addSummaryRow('d. Saldo Kas Bulan Ini', data.saldoAkhir, true);
+    addSummaryRow('a. Saldo Periode Lalu', data.saldoAwal);
+    addSummaryRow('b. Penerimaan Periode Ini', data.totalDebet);
+    addSummaryRow('c. Pengeluaran Periode Ini', data.totalKredit);
+    addSummaryRow('d. Saldo Kas Periode Ini', data.saldoAkhir, true);
 
     // --- SIGNATURES ---
     rowIdx += 3;

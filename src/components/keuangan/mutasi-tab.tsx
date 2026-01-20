@@ -115,7 +115,7 @@ export function MutasiTab({ akunList }: MutasiTabProps) {
                             <h2 className="text-xl font-bold uppercase tracking-wider mb-1">Gereja Masehi Injili di Timor</h2>
                             <h3 className="text-lg font-bold uppercase mb-1">Jemaat Anugerah Koluju</h3>
                             <div className="mt-4 border-t-2 border-black w-32 mx-auto"></div>
-                            <h1 className="text-2xl font-bold mt-2 underline decoration-double underline-offset-4">BUKU KAS UMUM</h1>
+                            <h1 className="text-2xl font-bold mt-2 underline decoration-double underline-offset-4">LAPORAN {akunNama.toUpperCase()}</h1>
                             <p className="text-sm mt-2 font-medium">Periode: {report.periodeLabel}</p>
                             <p className="text-sm font-medium">Akun Kas: {akunList.find(a => a.id === selectedAkun)?.nama}</p>
                         </div>

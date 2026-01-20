@@ -21,7 +21,7 @@ export async function getPeriodes(
     search?: string
 ) {
     const skip = (page - 1) * limit;
-    const where: any = { isActive: true };
+    const where: any = {};
 
     if (search) {
         where.OR = [
@@ -71,6 +71,7 @@ export async function createPeriode(
     const tanggalMulai = formData.get("tanggalMulai") as string;
     const tanggalAkhir = formData.get("tanggalAkhir") as string;
     const keterangan = formData.get("keterangan") as string;
+    const isActive = formData.get("isActive") === "true";
 
     const errors: PeriodeState["errors"] = {};
     if (!nama) errors.nama = ["Nama periode wajib diisi"];
@@ -127,7 +128,8 @@ export async function createPeriode(
                 tanggalMulai: start,
                 tanggalAkhir: end,
                 keterangan,
-                status: "ACTIVE", // Default to active for now
+                isActive,
+                status: isActive ? "ACTIVE" : "NON ACTIVE",
             },
         });
 
@@ -149,7 +151,8 @@ export async function updatePeriode(
     const tanggalMulai = formData.get("tanggalMulai") as string;
     const tanggalAkhir = formData.get("tanggalAkhir") as string;
     const keterangan = formData.get("keterangan") as string;
-    const status = formData.get("status") as string || "ACTIVE";
+    const isActive = formData.get("isActive") === "true";
+    const status = isActive ? "ACTIVE" : "NON ACTIVE";
 
     const errors: PeriodeState["errors"] = {};
     if (!nama) errors.nama = ["Nama periode wajib diisi"];
@@ -207,6 +210,7 @@ export async function updatePeriode(
                 tanggalMulai: start,
                 tanggalAkhir: end,
                 keterangan,
+                isActive,
                 status,
             },
         });
