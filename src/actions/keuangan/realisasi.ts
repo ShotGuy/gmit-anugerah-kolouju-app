@@ -89,6 +89,7 @@ export async function createRealisasi(
         });
 
         revalidatePath("/keuangan");
+        revalidatePath("/keuangan/realisasi");
         revalidatePath(`/keuangan/item/${itemKeuanganId}`);
         revalidatePath("/master-data/akun-kas"); // Revalidate balance list
 
@@ -221,6 +222,7 @@ export async function updateRealisasi(
         });
 
         revalidatePath("/keuangan");
+        revalidatePath("/keuangan/realisasi");
         revalidatePath(`/keuangan/realisasi/${itemKeuanganId}`);
         revalidatePath("/master-data/akun-kas");
         return { success: true, message: "Transaksi berhasil diperbarui" };
@@ -278,6 +280,7 @@ export async function deleteRealisasi(id: string) {
         });
 
         revalidatePath("/keuangan");
+        revalidatePath("/keuangan/realisasi");
         revalidatePath("/master-data/akun-kas");
         return { success: true, message: "Transaksi berhasil dihapus" };
     } catch (error) {
