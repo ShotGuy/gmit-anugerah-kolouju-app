@@ -47,6 +47,7 @@ interface Kategori {
     id: string;
     nama: string;
     kode: string;
+    jenis: "PENERIMAAN" | "PENGELUARAN";
     isActive: boolean;
     _count?: {
         itemKeuangan: number;
@@ -90,6 +91,7 @@ export default function KategoriKeuanganClient({
         defaultValues: {
             nama: "",
             kode: "",
+            jenis: "PENERIMAAN",
         },
     });
 
@@ -102,7 +104,7 @@ export default function KategoriKeuanganClient({
             toast.success(state.message);
             setIsDialogOpen(false);
             setEditingItem(null);
-            form.reset({ nama: "", kode: "" });
+            form.reset({ nama: "", kode: "", jenis: "PENERIMAAN" });
         } else if (state.message) {
             toast.error(state.message);
         }
@@ -114,13 +116,14 @@ export default function KategoriKeuanganClient({
         form.reset({
             nama: item.nama,
             kode: item.kode,
+            jenis: item.jenis as any || "PENERIMAAN",
         });
         setIsDialogOpen(true);
     };
 
     const handleCreate = () => {
         setEditingItem(null);
-        form.reset({ nama: "", kode: "" });
+        form.reset({ nama: "", kode: "", jenis: "PENERIMAAN" });
         setIsDialogOpen(true);
     };
 
@@ -203,7 +206,15 @@ export default function KategoriKeuanganClient({
                                                 <TableCell className="font-medium">
                                                     <Badge variant="outline">{item.kode}</Badge>
                                                 </TableCell>
-                                                <TableCell>{item.nama}</TableCell>
+                                                <TableCell>
+                                                    <div>{item.nama}</div>
+                                                    <div className="mt-1">
+                                                        {item.jenis === "PENERIMAAN" ?
+                                                            <Badge variant="secondary" className="text-[10px] bg-blue-100 text-blue-700 hover:bg-blue-200">Penerimaan</Badge> :
+                                                            <Badge variant="destructive" className="text-[10px]">Pengeluaran</Badge>
+                                                        }
+                                                    </div>
+                                                </TableCell>
                                                 <TableCell className="text-center">
                                                     {item._count?.itemKeuangan || 0} Item
                                                 </TableCell>
@@ -256,6 +267,12 @@ export default function KategoriKeuanganClient({
                                                     <Badge variant="outline" className="font-mono">{item.kode}</Badge>
                                                     <h3 className="font-semibold">{item.nama}</h3>
                                                 </div>
+                                                <div className="mb-1">
+                                                    {item.jenis === "PENERIMAAN" ?
+                                                        <Badge variant="secondary" className="text-[10px] bg-blue-100 text-blue-700 hover:bg-blue-200">Penerimaan</Badge> :
+                                                        <Badge variant="destructive" className="text-[10px]">Pengeluaran</Badge>
+                                                    }
+                                                </div>
                                                 <div className="text-sm text-muted-foreground flex items-center gap-1">
                                                     <Tag className="h-3 w-3" />
                                                     {item._count?.itemKeuangan || 0} Item Anggaran
@@ -300,6 +317,41 @@ export default function KategoriKeuanganClient({
 
                     <Form {...form}>
                         <form action={formAction} className="space-y-4">
+                            <FormField
+                                control={form.control}
+                                name="jenis"
+                                render={({ field }) => (
+                                    <FormItem className="space-y-2">
+                                        <FormLabel>Jenis Anggaran</FormLabel>
+                                        <FormControl>
+                                            <div className="flex gap-4">
+                                                <label className="flex items-center gap-2 border p-3 rounded-md cursor-pointer has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500 transition-colors flex-1">
+                                                    <input
+                                                        type="radio"
+                                                        {...field}
+                                                        value="PENERIMAAN"
+                                                        checked={field.value === "PENERIMAAN"}
+                                                        className="h-4 w-4 text-blue-600"
+                                                    />
+                                                    <span className="font-medium text-sm">Penerimaan (+Rp)</span>
+                                                </label>
+                                                <label className="flex items-center gap-2 border p-3 rounded-md cursor-pointer has-[:checked]:bg-red-50 has-[:checked]:border-red-500 transition-colors flex-1">
+                                                    <input
+                                                        type="radio"
+                                                        {...field}
+                                                        value="PENGELUARAN"
+                                                        checked={field.value === "PENGELUARAN"}
+                                                        className="h-4 w-4 text-red-600"
+                                                    />
+                                                    <span className="font-medium text-sm">Pengeluaran (-Rp)</span>
+                                                </label>
+                                            </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
                             <FormField
                                 control={form.control}
                                 name="kode"

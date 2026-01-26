@@ -70,6 +70,7 @@ export async function createKategori(
 ): Promise<KategoriKeuanganState> {
     const nama = formData.get("nama") as string;
     const kode = formData.get("kode") as string;
+    const jenis = formData.get("jenis") as string || "PENERIMAAN";
 
     // Simple validation
     const errors: KategoriKeuanganState["errors"] = {};
@@ -97,6 +98,7 @@ export async function createKategori(
             data: {
                 nama,
                 kode: kode.toUpperCase(),
+                jenis: jenis as any,
                 isActive: true,
             },
         });
@@ -149,7 +151,7 @@ export async function updateKategori(
 ): Promise<KategoriKeuanganState> {
     const nama = formData.get("nama") as string;
     const kode = formData.get("kode") as string;
-    const jenis = formData.get("jenis") as string || "PENGELUARAN"; // Default or form input
+    const jenis = formData.get("jenis") as string || "PENERIMAAN";
 
     const errors: KategoriKeuanganState["errors"] = {};
     if (!nama) errors.nama = ["Nama kategori wajib diisi"];
@@ -180,7 +182,7 @@ export async function updateKategori(
             data: {
                 nama,
                 kode: kode.toUpperCase(),
-                // jenis: jenis as any // Update type if schematic supports it
+                jenis: jenis as any,
             },
         });
 
