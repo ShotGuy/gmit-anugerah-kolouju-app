@@ -114,14 +114,31 @@ export async function updateAkunKas(
 
 export async function deleteAkunKas(id: string) {
     try {
-        await (prisma as any).akunKas.update({
-            where: { id },
-            data: { isActive: false }, // Soft delete
+        // Smart Delete: Check if account has any transactions
+        const txCount = await (prisma as any).realisasiItemKeuangan.count({
+            where: { akunKasId: id }
         });
-        revalidatePath("/master-data/akun-kas");
-        revalidatePath("/keuangan/realisasi");
-        return { success: true, message: "Akun kas berhasil dihapus" };
+
+        if (txCount > 0) {
+            // Has transactions -> Soft Delete
+            await (prisma as any).akunKas.update({
+                where: { id },
+                data: { isActive: false },
+            });
+            revalidatePath("/master-data/akun-kas");
+            revalidatePath("/keuangan/realisasi");
+            return { success: true, message: `Akun non-aktif. (Ditemukan ${txCount} transaksi terkait)` };
+        } else {
+            // No transactions -> Hard Delete
+            await (prisma as any).akunKas.delete({
+                where: { id },
+            });
+            revalidatePath("/master-data/akun-kas");
+            revalidatePath("/keuangan/realisasi");
+            return { success: true, message: "Akun kas berhasil dihapus permanen" };
+        }
     } catch (error) {
+        console.error("Error deleting Akun Kas:", error);
         return { success: false, message: "Gagal menghapus akun kas" };
     }
 }
