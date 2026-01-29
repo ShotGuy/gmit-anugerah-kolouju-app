@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { createResponse } from "@/lib/api-response";
@@ -263,10 +264,10 @@ export const createMasterCollectionHandlers = (key: MasterKey) => {
 
     const where = search
       ? {
-          OR: config.searchableFields.map((field) => ({
-            [field]: { contains: search, mode: "insensitive" },
-          })),
-        }
+        OR: config.searchableFields.map((field) => ({
+          [field]: { contains: search, mode: "insensitive" },
+        })),
+      }
       : undefined;
 
     // If list=true, return simplified format for dropdowns (no pagination)
@@ -335,6 +336,9 @@ export const createMasterCollectionHandlers = (key: MasterKey) => {
       data,
     });
 
+    // Invalidate global cache
+    revalidatePath("/", "layout");
+
     return NextResponse.json(
       createResponse(true, created, "Data berhasil ditambahkan"),
       { status: 201 },
@@ -402,6 +406,9 @@ export const createMasterDetailHandlers = (key: MasterKey) => {
       data: parsed.data,
     });
 
+    // Invalidate global cache
+    revalidatePath("/", "layout");
+
     return NextResponse.json(
       createResponse(true, updated, "Data berhasil diperbarui"),
     );
@@ -421,6 +428,10 @@ export const createMasterDetailHandlers = (key: MasterKey) => {
       await delegate.delete({
         where: { [config.idField]: id },
       });
+
+      // Invalidate global cache
+      revalidatePath("/", "layout");
+
       return NextResponse.json(createResponse(true, null, "Data dihapus"));
     } catch (err: any) {
       if (err?.code === 'P2003') {
@@ -432,4 +443,3 @@ export const createMasterDetailHandlers = (key: MasterKey) => {
 
   return { GET, PATCH, DELETE };
 };
-
