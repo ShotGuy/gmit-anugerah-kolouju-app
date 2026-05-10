@@ -134,6 +134,7 @@ export async function createPeriode(
         });
 
         revalidatePath("/master-data/periode-anggaran");
+        revalidatePath("/keuangan", "layout");
         return { success: true, message: "Periode berhasil dibuat" };
     } catch (error) {
         console.error(error);
@@ -216,6 +217,7 @@ export async function updatePeriode(
         });
 
         revalidatePath("/master-data/periode-anggaran");
+        revalidatePath("/keuangan", "layout");
         return { success: true, message: "Periode berhasil diperbarui" };
     } catch (error) {
         console.error(error);
@@ -254,6 +256,7 @@ export async function deletePeriode(id: string) {
         });
 
         revalidatePath("/master-data/periode-anggaran");
+        revalidatePath("/keuangan", "layout");
         return { success: true, message: "Periode berhasil dihapus" };
     } catch (error: any) {
         console.error("Delete Periode Error:", error);

@@ -68,7 +68,7 @@ export async function createAkunKas(
         console.log("Akun Created:", newAkun);
 
         revalidatePath("/master-data/akun-kas");
-        revalidatePath("/keuangan/realisasi");
+        revalidatePath("/keuangan", "layout");
         return { success: true, message: "Akun kas berhasil dibuat" };
     } catch (error) {
         console.error("Error creating Akun Kas:", error);
@@ -105,7 +105,7 @@ export async function updateAkunKas(
         });
 
         revalidatePath("/master-data/akun-kas");
-        revalidatePath("/keuangan/realisasi");
+        revalidatePath("/keuangan", "layout");
         return { success: true, message: "Akun kas berhasil diperbarui" };
     } catch (error) {
         return { success: false, message: "Gagal memperbarui akun kas" };
@@ -126,7 +126,7 @@ export async function deleteAkunKas(id: string) {
                 data: { isActive: false },
             });
             revalidatePath("/master-data/akun-kas");
-            revalidatePath("/keuangan/realisasi");
+            revalidatePath("/keuangan", "layout");
             return { success: true, message: `Akun non-aktif. (Ditemukan ${txCount} transaksi terkait)` };
         } else {
             // No transactions -> Hard Delete
@@ -134,7 +134,7 @@ export async function deleteAkunKas(id: string) {
                 where: { id },
             });
             revalidatePath("/master-data/akun-kas");
-            revalidatePath("/keuangan/realisasi");
+            revalidatePath("/keuangan", "layout");
             return { success: true, message: "Akun kas berhasil dihapus permanen" };
         }
     } catch (error) {

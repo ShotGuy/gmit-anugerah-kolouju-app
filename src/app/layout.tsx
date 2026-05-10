@@ -12,6 +12,8 @@ const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
 });
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "GMIT Anugerah Koluju • Admin",
   description: "Dashboard pendataan jemaat GMIT Anugerah Koluju",

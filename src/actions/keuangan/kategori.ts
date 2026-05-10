@@ -104,6 +104,7 @@ export async function createKategori(
         });
 
         revalidatePath("/master-data/kategori-keuangan");
+        revalidatePath("/keuangan", "layout");
         revalidatePath("/keuangan"); // Might affect dashboard dropdowns
 
         return {
@@ -138,6 +139,7 @@ export async function deleteKategori(id: string) {
         });
 
         revalidatePath("/master-data/kategori-keuangan");
+        revalidatePath("/keuangan", "layout");
         return { success: true, message: "Kategori berhasil dihapus" };
     } catch (error) {
         return { success: false, message: "Gagal menghapus kategori" };
@@ -187,6 +189,7 @@ export async function updateKategori(
         });
 
         revalidatePath("/master-data/kategori-keuangan");
+        revalidatePath("/keuangan", "layout");
         revalidatePath("/keuangan");
 
         return { success: true, message: "Kategori berhasil diperbarui" };
